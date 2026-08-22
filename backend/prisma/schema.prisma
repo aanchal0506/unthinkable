@@ -27,19 +27,19 @@ enum Role {
 }
 
 model DoctorProfile {
-  id             Int    @id @default(autoincrement())
-  userId         Int    @unique
-  specialization String
-  qualification  String?
-  experience     Int?
-  bio            String?
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  specialization  String
+  qualification   String?
+  experience      Int?
+  bio             String?
   consultationFee Float?
-  
+
   user User @relation(fields: [userId], references: [id])
 
   availabilities DoctorAvailability[]
   leaves         DoctorLeave[]
-  appointments   Appointment[] @relation("DoctorAppointments")
+  appointments   Appointment[]        @relation("DoctorAppointments")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,11 +58,11 @@ model PatientProfile {
 }
 
 model DoctorAvailability {
-  id        Int @id @default(autoincrement())
-  doctorId  Int
-  dayOfWeek Int
-  startTime String
-  endTime   String
+  id           Int    @id @default(autoincrement())
+  doctorId     Int
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
   slotDuration Int
 
   doctor DoctorProfile @relation(fields: [doctorId], references: [id])
@@ -73,10 +73,10 @@ model DoctorAvailability {
 }
 
 model DoctorLeave {
-  id        Int      @id @default(autoincrement())
-  doctorId  Int
-  date      DateTime
-  reason    String?
+  id       Int      @id @default(autoincrement())
+  doctorId Int
+  date     DateTime
+  reason   String?
 
   doctor DoctorProfile @relation(fields: [doctorId], references: [id])
 
@@ -84,7 +84,7 @@ model DoctorLeave {
 }
 
 model Appointment {
-  id        Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   patientId Int
   doctorId  Int
@@ -96,7 +96,10 @@ model Appointment {
   status AppointmentStatus @default(BOOKED)
 
   patient PatientProfile @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctor  DoctorProfile  @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  doctor DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  symptomSubmission SymptomSubmission?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,8 +109,40 @@ model Appointment {
   @@index([patientId, date])
 }
 
+model SymptomSubmission {
+  id            Int @id @default(autoincrement())
+  appointmentId Int @unique
+
+  symptoms           String
+  aiSummary          String?
+  urgency            UrgencyLevel?
+  chiefComplaint     String?
+  suggestedQuestions Json?
+  aiStatus           AIStatus      @default(PENDING)
+  aiError            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([appointmentId])
+}
+
 enum AppointmentStatus {
   BOOKED
   CANCELLED
   COMPLETED
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AIStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
