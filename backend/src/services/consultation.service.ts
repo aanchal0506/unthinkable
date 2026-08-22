@@ -1,6 +1,7 @@
 import consultationRepository from "../repositories/consultation.repository";
 import * as appointmentRepository from "../repositories/appointment.repository";
 import { getDoctorByUserId } from "../repositories/doctor.repository";
+import { parseDuration, generateReminders } from "./reminder.service";
 
 const createConsultation = async (
   appointmentId: number,
@@ -65,6 +66,7 @@ const createConsultation = async (
       followUpInstructions?.trim()
     );
 
+  // Create prescriptions + medication reminders
   for (const prescription of prescriptions) {
     if (
       !prescription.medication ||
@@ -76,9 +78,21 @@ const createConsultation = async (
       );
     }
 
-    await consultationRepository.createPrescription(
-      consultation.id,
-      prescription
+    const createdPrescription =
+      await consultationRepository.createPrescription(
+        consultation.id,
+        prescription
+      );
+
+    // Generate medication reminders
+    const durationDays = parseDuration(
+      prescription.duration
+    );
+
+    await generateReminders(
+      createdPrescription.id,
+      prescription.frequency,
+      durationDays
     );
   }
 
@@ -86,7 +100,9 @@ const createConsultation = async (
     appointmentId
   );
 
-  return consultationRepository.findByAppointmentId(appointmentId);
+  return consultationRepository.findByAppointmentId(
+    appointmentId
+  );
 };
 
 const getConsultation = async (

@@ -161,10 +161,35 @@ model Prescription {
 
   consultation Consultation @relation(fields: [consultationId], references: [id])
 
+  reminders MedicationReminder[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([consultationId])
+}
+
+model MedicationReminder {
+  id             Int @id @default(autoincrement())
+  prescriptionId Int
+
+  scheduledAt DateTime
+  status      ReminderStatus @default(PENDING)
+  sentAt      DateTime?
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scheduledAt, status])
+  @@index([prescriptionId])
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 enum AppointmentStatus {

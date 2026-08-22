@@ -10,6 +10,7 @@ import appointmentRoutes from "./src/routes/appointment.route";
 import leaveRoutes from "./src/routes/leave.route";
 import symptomRoutes from "./src/routes/symptom.route";
 import consultationRoutes from "./src/routes/consultation.route";
+import reminderRoutes from "./src/routes/reminder.route";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/doctors/leaves", leaveRoutes);
 app.use("/api", symptomRoutes);
 app.use("/api", consultationRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 const PORT = process.env.PORT || 5000;
 
