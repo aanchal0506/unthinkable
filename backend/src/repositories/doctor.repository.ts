@@ -1,33 +1,41 @@
 import prisma from "../config/prisma";
 
-const createDoctor = async (
-    userId: number,
-    specialization: string,
-    qualification?: string,
-    experience?: number,
-    bio?: string,
-    consultationFee?: number
-) => {
-    return await prisma.doctorProfile.create({
-        data: {
-            userId,
-            specialization,
-            qualification,
-            experience,
-            bio,
-            consultationFee,
-        },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    role: true,
-                },
-            },
-        },
+const createDoctor = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  specialization: string;
+  qualification?: string;
+  experience?: number;
+  bio?: string;
+  consultationFee?: number;
+}) => {
+  return await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: "DOCTOR",
+      },
     });
+
+    const doctor = await tx.doctorProfile.create({
+      data: {
+        userId: user.id,
+        specialization: data.specialization,
+        qualification: data.qualification,
+        experience: data.experience,
+        bio: data.bio,
+        consultationFee: data.consultationFee,
+      },
+    });
+
+    return {
+      user,
+      doctor,
+    };
+  });
 };
 
 const getAllDoctors = async (specialization?: string) => {

@@ -20,6 +20,20 @@ router.get(
   appointmentController.getMyAppointments
 );
 
+// Get logged-in doctor's appointments
+router.get(
+  "/doctor/my",
+  authenticate,
+  appointmentController.getMyDoctorAppointments
+);
+
+// Complete appointment
+router.patch(
+  "/:id/complete",
+  authenticate,
+  appointmentController.completeAppointment
+);
+
 // Cancel an appointment
 router.delete(
   "/:id",

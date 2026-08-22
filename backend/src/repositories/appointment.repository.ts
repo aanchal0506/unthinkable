@@ -132,6 +132,17 @@ const rebookAppointment = async (
   });
 };
 
+const completeAppointment = async (id: number) => {
+  return await prisma.appointment.update({
+    where: {
+      id,
+    },
+    data: {
+      status: "COMPLETED",
+    },
+  });
+};
+
 export {
   createAppointment,
   getAppointmentById,
@@ -141,4 +152,5 @@ export {
   getAppointmentBySlot,
   rebookAppointment,
   cancelAppointment,
+  completeAppointment,
 };

@@ -121,6 +121,62 @@ const getDoctorAppointments = async (
   );
 };
 
+const getDoctorAppointmentsByUserId = async (
+  userId: number
+) => {
+  const doctor =
+    await doctorRepository.getDoctorByUserId(userId);
+
+  if (!doctor) {
+    throw new Error("Doctor profile not found");
+  }
+
+  return await appointmentRepository.getDoctorAppointments(
+    doctor.id
+  );
+};
+
+const completeAppointment = async (
+  appointmentId: number,
+  userId: number
+) => {
+  // Find appointment
+  const appointment =
+    await appointmentRepository.getAppointmentById(
+      appointmentId
+    );
+
+  if (!appointment) {
+    throw new Error("Appointment not found");
+  }
+
+  // Find logged-in doctor's profile
+  const doctor =
+    await doctorRepository.getDoctorByUserId(userId);
+
+  if (!doctor) {
+    throw new Error("Doctor profile not found");
+  }
+
+  // Make sure this appointment belongs to this doctor
+  if (appointment.doctorId !== doctor.id) {
+    throw new Error(
+      "You can only complete your own appointments"
+    );
+  }
+
+  // Only BOOKED appointments can be completed
+  if (appointment.status !== "BOOKED") {
+    throw new Error(
+      "Only booked appointments can be completed"
+    );
+  }
+
+  return await appointmentRepository.completeAppointment(
+    appointmentId
+  );
+};
+
 const cancelAppointment = async (
   appointmentId: number,
   userId: number,
@@ -189,4 +245,6 @@ export {
   getPatientAppointments,
   getDoctorAppointments,
   cancelAppointment,
+  getDoctorAppointmentsByUserId,
+  completeAppointment,
 };

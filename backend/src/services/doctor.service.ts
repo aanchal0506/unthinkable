@@ -1,48 +1,52 @@
 import bcrypt from "bcrypt";
 import * as doctorRepository from "../repositories/doctor.repository";
+import * as userRepository from "../repositories/user.repository";
 
-const createDoctor = async (
-    name: string,
-    email: string,
-    password: string,
-    specialization: string,
-    qualification?: string,
-    experience?: number,
-    bio?: string,
-    consultationFee?: number
-) => {
-    const existingUser = await doctorRepository.getUserByEmail(email);
+const createDoctor = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  specialization: string;
+  qualification?: string;
+  experience?: number;
+  bio?: string;
+  consultationFee?: number;
+}) => {
+  // Check whether email already exists
+  const existingUser =
+    await userRepository.findUserByEmail(data.email);
 
-    if (existingUser) {
-        throw new Error("A user with this email already exists");
-    }
+  if (existingUser) {
+    throw new Error("User already exists");
+  }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  // Hash password
+  const hashedPassword = await bcrypt.hash(
+    data.password,
+    10
+  );
 
-    const user = await doctorRepository.createDoctorUser(
-        name,
-        email,
-        hashedPassword
-    );
+  const result =
+    await doctorRepository.createDoctor({
+      ...data,
+      password: hashedPassword,
+    });
 
-    try {
-        const doctor = await doctorRepository.createDoctor(
-            user.id,
-            specialization,
-            qualification,
-            experience,
-            bio,
-            consultationFee
-        );
-
-        return doctor;
-    } catch (error) {
-        // If doctor profile creation fails,
-        // remove the user that was just created.
-        await doctorRepository.deleteUser(user.id);
-
-        throw error;
-    }
+  return {
+    id: result.doctor.id,
+    userId: result.user.id,
+    name: result.user.name,
+    email: result.user.email,
+    specialization:
+      result.doctor.specialization,
+    qualification:
+      result.doctor.qualification,
+    experience:
+      result.doctor.experience,
+    bio: result.doctor.bio,
+    consultationFee:
+      result.doctor.consultationFee,
+  };
 };
 
 const getDoctors = async (specialization?: string) => {

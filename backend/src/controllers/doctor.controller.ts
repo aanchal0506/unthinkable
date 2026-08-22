@@ -1,58 +1,76 @@
 import { Request, Response } from "express";
 import * as doctorService from "../services/doctor.service";
 
-const createDoctor = async (req: Request, res: Response) => {
-    try {
-        const {
-            name,
-            email,
-            password,
-            specialization,
-            qualification,
-            experience,
-            bio,
-            consultationFee,
-        } = req.body;
+const createDoctor = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      specialization,
+      qualification,
+      experience,
+      bio,
+      consultationFee,
+    } = req.body;
 
-        if (!name || !email || !password || !specialization) {
-            return res.status(400).json({
-                message:
-                    "Name, email, password and specialization are required",
-            });
-        }
-
-        const doctor = await doctorService.createDoctor(
-            name,
-            email,
-            password,
-            specialization,
-            qualification,
-            experience,
-            bio,
-            consultationFee
-        );
-
-        return res.status(201).json({
-            message: "Doctor created successfully",
-            doctor,
-        });
-    } catch (error: any) {
-        console.error("Create doctor error:", error);
-
-        if (
-            error.message ===
-            "A user with this email already exists"
-        ) {
-            return res.status(409).json({
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            message: "Failed to create doctor",
-        });
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !specialization
+    ) {
+      return res.status(400).json({
+        message:
+          "Name, email, password and specialization are required",
+      });
     }
+
+    const doctor =
+      await doctorService.createDoctor({
+        name,
+        email,
+        password,
+        specialization,
+        qualification,
+        experience:
+          experience !== undefined
+            ? Number(experience)
+            : undefined,
+        bio,
+        consultationFee:
+          consultationFee !== undefined
+            ? Number(consultationFee)
+            : undefined,
+      });
+
+    return res.status(201).json({
+      message: "Doctor created successfully",
+      doctor,
+    });
+  } catch (error: any) {
+    console.error(
+      "Create doctor error:",
+      error
+    );
+
+    if (
+      error.message === "User already exists"
+    ) {
+      return res.status(409).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to create doctor",
+    });
+  }
 };
+
 
 const getDoctors = async (req: Request, res: Response) => {
     try {

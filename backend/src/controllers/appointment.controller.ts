@@ -141,6 +141,126 @@ const getMyAppointments = async (
   }
 };
 
+// Get logged-in doctor's appointments
+const getMyDoctorAppointments = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    if (req.user.role !== "DOCTOR") {
+      return res.status(403).json({
+        message: "Only doctors can access this",
+      });
+    }
+
+    const appointments =
+      await appointmentService.getDoctorAppointmentsByUserId(
+        req.user.id
+      );
+
+    return res.status(200).json({
+      appointments,
+    });
+  } catch (error: any) {
+    console.error(
+      "Get doctor appointments error:",
+      error
+    );
+
+    if (
+      error.message ===
+      "Doctor profile not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to fetch appointments",
+    });
+  }
+};
+
+// Complete appointment
+const completeAppointment = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+
+    if (req.user.role !== "DOCTOR") {
+      return res.status(403).json({
+        message:
+          "Only doctors can complete appointments",
+      });
+    }
+
+    const appointmentId = Number(
+      req.params.id
+    );
+
+    if (isNaN(appointmentId)) {
+      return res.status(400).json({
+        message: "Invalid appointment ID",
+      });
+    }
+
+    const appointment =
+      await appointmentService.completeAppointment(
+        appointmentId,
+        req.user.id
+      );
+
+    return res.status(200).json({
+      message:
+        "Appointment completed successfully",
+      appointment,
+    });
+  } catch (error: any) {
+    console.error(
+      "Complete appointment error:",
+      error
+    );
+
+    if (
+      error.message === "Appointment not found" ||
+      error.message ===
+        "Doctor profile not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+        "You can only complete your own appointments" ||
+      error.message ===
+        "Only booked appointments can be completed"
+    ) {
+      return res.status(403).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to complete appointment",
+    });
+  }
+};
+
 // Cancel appointment
 const cancelAppointment = async (
   req: AuthRequest,
@@ -215,4 +335,6 @@ export {
   bookAppointment,
   getMyAppointments,
   cancelAppointment,
+  getMyDoctorAppointments,
+  completeAppointment,
 };
