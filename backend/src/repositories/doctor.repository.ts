@@ -127,6 +127,7 @@ const deleteDoctor = async (id: number) => {
     });
 };
 
+
 const getUserByEmail = async (email: string) => {
     return await prisma.user.findUnique({
         where: {
@@ -157,6 +158,7 @@ const deleteUser = async (userId: number) => {
         },
     });
 };
+
 
 export {
     createDoctor,

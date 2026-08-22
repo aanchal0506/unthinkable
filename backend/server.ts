@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 
 import authRoutes from "./src/routes/auth.routes";
 import doctorRoutes from "./src/routes/doctor.route";
+import availabilityRoutes from "./src/routes/avl.route";
+import slotRoutes from "./src/routes/slot.route";
+import appointmentRoutes from "./src/routes/appointment.route";
 
 dotenv.config();
 
@@ -19,8 +22,10 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/doctors", doctorRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/slots", slotRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 

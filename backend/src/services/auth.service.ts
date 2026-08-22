@@ -1,86 +1,127 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Role } from "../generated/prisma/enums";
 
+import prisma from "../config/prisma";
 import * as userRepository from "../repositories/user.repository";
 
 const registerUser = async (
   name: string,
   email: string,
   password: string,
-  role: Role = Role.PATIENT,
+  role: "PATIENT" | "DOCTOR" | "ADMIN"
 ) => {
-  try {
-    const existingUser = await userRepository.findUserByEmail(email);
+  const existingUser =
+    await userRepository.findUserByEmail(email);
 
-    if (existingUser) {
-      throw new Error("User already exists");
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await userRepository.createUser({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "PATIENT", // Fixed: role value should be assigned properly
-    });
-
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-  } catch (error) {
-    // Re-throw or handle specific errors
-    throw error;
+  if (existingUser) {
+    throw new Error("User already exists");
   }
-};
 
-const loginUser = async (email: string, password: string) => {
-  try {
-    const user = await userRepository.findUserByEmail(email);
+  const hashedPassword = await bcrypt.hash(
+    password,
+    10
+  );
 
-    if (!user) {
-      throw new Error("Invalid email or password");
-    }
+  // PATIENT
+  if (role === "PATIENT") {
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            name,
+            email,
+            password: hashedPassword,
+            role,
+          },
+        });
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+        const patientProfile =
+          await tx.patientProfile.create({
+            data: {
+              userId: user.id,
+            },
+          });
 
-    if (!passwordMatch) {
-      throw new Error("Invalid email or password");
-    }
-
-    const secret = process.env.JWT_SECRET;
-
-    if (!secret) {
-      throw new Error("JWT_SECRET is not defined");
-    }
-
-    const token = jwt.sign(
-      {
-        id: user.id,
-        role: user.role,
-      },
-      secret,
-      {
-        expiresIn: "1d",
+        return {
+          user,
+          patientProfile,
+        };
       }
     );
 
     return {
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      id: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
+      role: result.user.role,
     };
-  } catch (error) {
-    throw error;
   }
+
+  // DOCTOR / ADMIN
+  const user = await userRepository.createUser({
+    name,
+    email,
+    password: hashedPassword,
+    role,
+  });
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
 };
 
-export { registerUser, loginUser };
+const loginUser = async (
+  email: string,
+  password: string
+) => {
+  const user =
+    await userRepository.findUserByEmail(email);
+
+  if (!user) {
+    throw new Error("Invalid email or password");
+  }
+
+  const passwordMatch = await bcrypt.compare(
+    password,
+    user.password
+  );
+
+  if (!passwordMatch) {
+    throw new Error("Invalid email or password");
+  }
+
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error("JWT_SECRET is not defined");
+  }
+
+  const token = jwt.sign(
+    {
+      id: user.id,
+      role: user.role,
+    },
+    secret,
+    {
+      expiresIn: "1d",
+    }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
+};
+
+export {
+  registerUser,
+  loginUser,
+};
