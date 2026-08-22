@@ -1,3 +1,5 @@
+//user.repository.ts
+
 import prisma from "../config/prisma";
 
 const findUserByEmail = async (email: string) => {

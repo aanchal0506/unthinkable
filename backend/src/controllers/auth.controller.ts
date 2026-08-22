@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-
 import * as authService from "../services/auth.service";
 
 const register = async (req: Request, res: Response) => {
@@ -20,7 +19,7 @@ const register = async (req: Request, res: Response) => {
     );
 
     return res.status(201).json({
-      message: "User registered successfully",
+      message: "Patient registered successfully",
       user,
     });
   } catch (error: any) {

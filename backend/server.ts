@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import authRoutes from "./src/routes/auth.routes";
+import doctorRoutes from "./src/routes/doctor.route";
 
 dotenv.config();
 
@@ -18,6 +19,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/doctors", doctorRoutes);
 
 const PORT = process.env.PORT || 5000;
 
