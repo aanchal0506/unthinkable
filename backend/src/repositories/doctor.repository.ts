@@ -38,29 +38,53 @@ const createDoctor = async (data: {
   });
 };
 
-const getAllDoctors = async (specialization?: string) => {
-    return await prisma.doctorProfile.findMany({
-        where: specialization
-            ? {
-                  specialization: {
-                      contains: specialization,
-                      mode: "insensitive",
-                  },
-              }
-            : undefined,
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
+const getAllDoctors = async (
+  specialization?: string,
+  name?: string
+) => {
+  return await prisma.doctorProfile.findMany({
+    where: {
+      ...(specialization
+        ? {
+            specialization: {
+              contains: specialization,
+              mode: "insensitive",
             },
+          }
+        : {}),
+
+      ...(name
+        ? {
+            user: {
+              name: {
+                contains: name,
+                mode: "insensitive",
+              },
+            },
+          }
+        : {}),
+    },
+
+    select: {
+      id: true,
+      specialization: true,
+      qualification: true,
+      experience: true,
+      bio: true,
+      consultationFee: true,
+
+      user: {
+        select: {
+          id: true,
+          name: true,
         },
-        orderBy: {
-            createdAt: "desc",
-        },
-    });
+      },
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 };
 
 const getDoctorById = async (id: number) => {

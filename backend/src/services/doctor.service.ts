@@ -49,8 +49,14 @@ const createDoctor = async (data: {
   };
 };
 
-const getDoctors = async (specialization?: string) => {
-    return await doctorRepository.getAllDoctors(specialization);
+const getDoctors = async (
+  specialization?: string,
+  name?: string
+) => {
+  return await doctorRepository.getAllDoctors(
+    specialization,
+    name
+  );
 };
 
 const getDoctor = async (id: number) => {

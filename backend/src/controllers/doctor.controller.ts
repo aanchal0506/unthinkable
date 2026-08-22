@@ -72,27 +72,40 @@ const createDoctor = async (
 };
 
 
-const getDoctors = async (req: Request, res: Response) => {
-    try {
-        const specialization =
-            typeof req.query.specialization === "string"
-                ? req.query.specialization
-                : undefined;
+const getDoctors = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const specialization =
+      typeof req.query.specialization === "string"
+        ? req.query.specialization
+        : undefined;
 
-        const doctors = await doctorService.getDoctors(
-            specialization
-        );
+    const name =
+      typeof req.query.name === "string"
+        ? req.query.name
+        : undefined;
 
-        return res.status(200).json({
-            doctors,
-        });
-    } catch (error) {
-        console.error("Get doctors error:", error);
+    const doctors =
+      await doctorService.getDoctors(
+        specialization,
+        name
+      );
 
-        return res.status(500).json({
-            message: "Failed to fetch doctors",
-        });
-    }
+    return res.status(200).json({
+      doctors,
+    });
+  } catch (error) {
+    console.error(
+      "Get doctors error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to fetch doctors",
+    });
+  }
 };
 
 const getDoctor = async (req: Request, res: Response) => {
