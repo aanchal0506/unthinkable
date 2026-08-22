@@ -20,6 +20,47 @@ const getAppointmentById = async (id: number) => {
   });
 };
 
+const getDoctorAppointmentDetails = async (appointmentId: number) => {
+  return await prisma.appointment.findUnique({
+    where: {
+      id: appointmentId,
+    },
+    include: {
+      patient: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
+      doctor: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
+      symptomSubmission: true,
+
+      consultation: {
+        include: {
+          prescriptions: true,
+        },
+      },
+    },
+  });
+};
+
 const getPatientAppointments = async (
   patientId: number
 ) => {
@@ -41,6 +82,39 @@ const getPatientAppointments = async (
     },
     orderBy: {
       date: "asc",
+    },
+  });
+};
+
+const getPatientAppointmentDetails = async (
+  appointmentId: number,
+  patientId: number
+) => {
+  return await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      patientId,
+    },
+    include: {
+      doctor: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
+      symptomSubmission: true,
+
+      consultation: {
+        include: {
+          prescriptions: true,
+        },
+      },
     },
   });
 };
@@ -70,7 +144,6 @@ const getDoctorAppointments = async (
   });
 };
 
-// NEW
 const getBookedAppointments = async (
   doctorId: number,
   date: Date
@@ -153,4 +226,6 @@ export {
   rebookAppointment,
   cancelAppointment,
   completeAppointment,
+  getDoctorAppointmentDetails,
+  getPatientAppointmentDetails,
 };

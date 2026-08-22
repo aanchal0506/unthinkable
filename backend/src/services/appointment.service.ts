@@ -240,6 +240,65 @@ const cancelAppointment = async (
   );
 };
 
+const getDoctorAppointmentDetails = async (
+  appointmentId: number,
+  doctorUserId: number
+) => {
+  const appointment =
+    await appointmentRepository.getDoctorAppointmentDetails(
+      appointmentId
+    );
+
+  if (!appointment) {
+    throw new Error("Appointment not found");
+  }
+
+  // appointment.doctorId is DoctorProfile.id
+  // doctorUserId is User.id from JWT
+
+  if (appointment.doctor.userId !== doctorUserId) {
+    throw new Error(
+      "You are not authorized to view this appointment"
+    );
+  }
+
+  return appointment;
+};
+
+const getPatientAppointmentsService = async (
+  patientUserId: number
+) => {
+  const patient = await userRepository.getPatientProfileByUserId(patientUserId);
+
+  if (!patient) {
+    throw new Error("Patient profile not found");
+  }
+
+  return await getPatientAppointments(patient.id);
+};
+
+const getPatientAppointmentDetailsService = async (
+  appointmentId: number,
+  patientUserId: number
+) => {
+  const patient = await userRepository.getPatientProfileByUserId(patientUserId);
+
+  if (!patient) {
+    throw new Error("Patient profile not found");
+  }
+
+  const appointment = await appointmentRepository.getPatientAppointmentDetails(
+    appointmentId,
+    patient.id
+  );
+
+  if (!appointment) {
+    throw new Error("Appointment not found");
+  }
+
+  return appointment;
+};
+
 export {
   bookAppointment,
   getPatientAppointments,
@@ -247,4 +306,7 @@ export {
   cancelAppointment,
   getDoctorAppointmentsByUserId,
   completeAppointment,
+  getDoctorAppointmentDetails,
+  getPatientAppointmentsService,
+  getPatientAppointmentDetailsService,
 };

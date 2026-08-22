@@ -331,10 +331,97 @@ const cancelAppointment = async (
   }
 };
 
+const getDoctorAppointmentDetails = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const appointmentId = Number(req.params.appointmentId);
+
+    const doctorUserId = Number((req as any).user.id);
+
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      return res.status(400).json({
+        message: "Invalid appointment ID",
+      });
+    }
+
+    const appointment =
+      await appointmentService.getDoctorAppointmentDetails(
+        appointmentId,
+        doctorUserId
+      );
+
+    return res.status(200).json({
+      appointment,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+const getPatientAppointments = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const patientUserId = Number((req as any).user.id);
+
+    const appointments =
+      await appointmentService.getPatientAppointmentsService(
+        patientUserId
+      );
+
+    return res.status(200).json({
+      appointments,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+const getPatientAppointmentDetails = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const appointmentId = Number(req.params.appointmentId);
+
+    const patientUserId = Number((req as any).user.id);
+
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      return res.status(400).json({
+        message: "Invalid appointment ID",
+      });
+    }
+
+    const appointment =
+      await appointmentService.getPatientAppointmentDetailsService(
+        appointmentId,
+        patientUserId
+      );
+
+    return res.status(200).json({
+      appointment,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
 export {
   bookAppointment,
   getMyAppointments,
   cancelAppointment,
   getMyDoctorAppointments,
   completeAppointment,
+  getDoctorAppointmentDetails,
+  getPatientAppointments,
+  getPatientAppointmentDetails,
 };
