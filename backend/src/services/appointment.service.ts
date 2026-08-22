@@ -2,6 +2,7 @@ import * as appointmentRepository from "../repositories/appointment.repository";
 import * as doctorRepository from "../repositories/doctor.repository";
 import * as userRepository from "../repositories/user.repository";
 import * as slotService from "./slot.service";
+import { sendBookingConfirmationToDoctor, sendBookingConfirmationToPatient,  } from "./email.service";
 
 const bookAppointment = async (
   patientUserId: number,
@@ -17,7 +18,7 @@ const bookAppointment = async (
     throw new Error("Doctor not found");
   }
 
-  // 2. Find patient profile using logged-in user's ID
+  // 2. Find patient profile
   const patient =
     await userRepository.getPatientProfileByUserId(
       patientUserId
@@ -36,14 +37,14 @@ const bookAppointment = async (
     throw new Error("Invalid date");
   }
 
-  // 4. Get available slots for this doctor/date
+  // 4. Get available slots
   const slots =
     await slotService.getAvailableSlots(
       doctorId,
       dateString
     );
 
-  // 5. Check whether requested time is a valid slot
+  // 5. Check requested slot
   const slot = slots.find(
     (item) => item.startTime === startTime
   );
@@ -54,45 +55,80 @@ const bookAppointment = async (
     );
   }
 
-  // 6. Create appointment
-  // 6. Check if an appointment already exists
-const existingAppointment =
-  await appointmentRepository.getAppointmentBySlot(
-    doctorId,
-    date,
-    slot.startTime
-  );
+  // 6. Check existing appointment
+  const existingAppointment =
+    await appointmentRepository.getAppointmentBySlot(
+      doctorId,
+      date,
+      slot.startTime
+    );
 
-// Slot is already actively booked
-if (
-  existingAppointment &&
-  existingAppointment.status === "BOOKED"
-) {
-  throw new Error(
-    "This slot has already been booked"
-  );
-}
+  // Slot already booked
+  if (
+    existingAppointment &&
+    existingAppointment.status === "BOOKED"
+  ) {
+    throw new Error(
+      "This slot has already been booked"
+    );
+  }
 
-// Slot was previously cancelled
-if (
-  existingAppointment &&
-  existingAppointment.status === "CANCELLED"
-) {
-  return await appointmentRepository.rebookAppointment(
-    existingAppointment.id,
-    patient.id,
-    slot.endTime
-  );
-}
+  let appointment;
 
-// 7. Create completely new appointment
-return await appointmentRepository.createAppointment({
-  patientId: patient.id,
-  doctorId,
-  date,
-  startTime: slot.startTime,
-  endTime: slot.endTime,
-});
+  // 7. Rebook previously cancelled appointment
+  if (
+    existingAppointment &&
+    existingAppointment.status === "CANCELLED"
+  ) {
+    appointment =
+      await appointmentRepository.rebookAppointment(
+        existingAppointment.id,
+        patient.id,
+        slot.endTime
+      );
+  } else {
+    // 8. Create new appointment
+    appointment =
+      await appointmentRepository.createAppointment({
+        patientId: patient.id,
+        doctorId,
+        date,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      });
+  }
+
+  // 9. Get patient + doctor email details
+  const appointmentDetails =
+    await appointmentRepository.getAppointmentNotificationDetails(
+      appointment.id
+    );
+
+  // 10. Send booking confirmation to both
+  if (appointmentDetails) {
+    await Promise.all([
+      sendBookingConfirmationToPatient(
+        appointmentDetails.patient.user.email,
+        appointmentDetails.patient.user.name,
+        appointmentDetails.doctor.user.name,
+        appointmentDetails.date,
+        appointmentDetails.startTime,
+        appointmentDetails.endTime
+      ),
+
+      sendBookingConfirmationToDoctor(
+        appointmentDetails.doctor.user.email,
+        appointmentDetails.doctor.user.name,
+        appointmentDetails.patient.user.name,
+        appointmentDetails.date,
+        appointmentDetails.startTime,
+        appointmentDetails.endTime
+      ),
+    ]);
+  }
+
+  // 11. Return appointment
+  return appointment;
 };
 
 const getPatientAppointments = async (

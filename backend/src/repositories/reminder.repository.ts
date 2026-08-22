@@ -44,9 +44,32 @@ const getPendingReminders = async (before: Date) => {
         lte: before,
       },
     },
+
     include: {
-      prescription: true,
+      prescription: {
+        include: {
+          consultation: {
+            include: {
+              appointment: {
+                include: {
+                  patient: {
+                    include: {
+                      user: {
+                        select: {
+                          email: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
+
     orderBy: {
       scheduledAt: "asc",
     },

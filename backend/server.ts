@@ -12,6 +12,8 @@ import symptomRoutes from "./src/routes/symptom.route";
 import consultationRoutes from "./src/routes/consultation.route";
 import reminderRoutes from "./src/routes/reminder.route";
 
+import startReminderJob from "./src/jobs/reminder.job";
+
 dotenv.config();
 
 const app = express();
@@ -39,4 +41,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  startReminderJob();
 });
