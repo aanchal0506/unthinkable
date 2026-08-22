@@ -104,6 +104,8 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  consultation Consultation?
+
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
   @@index([patientId, date])
@@ -127,6 +129,42 @@ model SymptomSubmission {
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@index([appointmentId])
+}
+
+model Consultation {
+  id            Int @id @default(autoincrement())
+  appointmentId Int @unique
+
+  clinicalNotes        String
+  diagnosis            String?
+  followUpInstructions String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  prescriptions Prescription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appointmentId])
+}
+
+model Prescription {
+  id             Int @id @default(autoincrement())
+  consultationId Int
+
+  medication   String
+  dosage       String
+  frequency    String
+  duration     String?
+  instructions String?
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([consultationId])
 }
 
 enum AppointmentStatus {

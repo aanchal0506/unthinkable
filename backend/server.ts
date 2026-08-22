@@ -9,6 +9,7 @@ import slotRoutes from "./src/routes/slot.route";
 import appointmentRoutes from "./src/routes/appointment.route";
 import leaveRoutes from "./src/routes/leave.route";
 import symptomRoutes from "./src/routes/symptom.route";
+import consultationRoutes from "./src/routes/consultation.route";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use("/api/slots", slotRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/doctors/leaves", leaveRoutes);
 app.use("/api", symptomRoutes);
+app.use("/api", consultationRoutes);
 
 const PORT = process.env.PORT || 5000;
 
