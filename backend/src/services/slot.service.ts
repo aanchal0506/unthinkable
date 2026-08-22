@@ -1,6 +1,7 @@
 import * as availabilityRepository from "../repositories/avl.repository";
 import * as doctorRepository from "../repositories/doctor.repository";
 import * as appointmentRepository from "../repositories/appointment.repository";
+import * as leaveRepository from "../repositories/leave.repository";
 
 const getDayOfWeek = (date: string) => {
   const day = new Date(`${date}T00:00:00`);
@@ -34,10 +35,30 @@ const getAvailableSlots = async (
     throw new Error("Doctor not found");
   }
 
-  // 2. Get day of week
+  // 2. Convert requested date
+  const appointmentDate = new Date(
+    `${date}T00:00:00`
+  );
+
+  if (isNaN(appointmentDate.getTime())) {
+    throw new Error("Invalid date");
+  }
+
+  // 3. Check whether doctor is on leave
+  const leave =
+    await leaveRepository.getLeaveByDoctorAndDate(
+      doctorId,
+      appointmentDate
+    );
+
+  if (leave) {
+    return [];
+  }
+
+  // 4. Get day of week
   const dayOfWeek = getDayOfWeek(date);
 
-  // 3. Get doctor's availability
+  // 5. Get doctor's availability
   const availabilities =
     await availabilityRepository.getDoctorAvailability(
       doctorId
@@ -47,11 +68,12 @@ const getAvailableSlots = async (
     (item) => item.dayOfWeek === dayOfWeek
   );
 
+  // Doctor doesn't work on this day
   if (!availability) {
     return [];
   }
 
-  // 4. Generate all possible slots
+  // 6. Generate all possible slots
   const start = timeToMinutes(
     availability.startTime
   );
@@ -69,24 +91,22 @@ const getAvailableSlots = async (
   while (current + duration <= end) {
     slots.push({
       startTime: minutesToTime(current),
-      endTime: minutesToTime(current + duration),
+      endTime: minutesToTime(
+        current + duration
+      ),
     });
 
     current += duration;
   }
 
-  // 5. Get already BOOKED appointments
-  const appointmentDate = new Date(
-    `${date}T00:00:00`
-  );
-
+  // 7. Get already BOOKED appointments
   const bookedAppointments =
     await appointmentRepository.getBookedAppointments(
       doctorId,
       appointmentDate
     );
 
-  // 6. Remove booked slots
+  // 8. Remove booked slots
   const availableSlots = slots.filter(
     (slot) => {
       return !bookedAppointments.some(
