@@ -27,7 +27,8 @@ const minutesToTime = (minutes: number) => {
 
 const getAvailableSlots = async (
   doctorId: number,
-  date: string
+  date: string,
+  ignoreHolds = false
 ) => {
   // 1. Check doctor
   const doctor =
@@ -109,36 +110,42 @@ const getAvailableSlots = async (
     );
 
   // 8. Get active (unexpired) holds placed by other patients mid-booking
-  const activeHolds =
+  // 8. Get active holds only when we need to hide them
+// from normal slot availability.
+let activeHolds: {
+  startTime: string;
+}[] = [];
+
+if (!ignoreHolds) {
+  activeHolds =
     await slotHoldRepository.getActiveHoldsForDoctorAndDate(
       doctorId,
       appointmentDate
     );
+}
 
-  // 9. Remove booked and held slots
-  const availableSlots = slots
-    .filter(
-      (slot) => {
-        return !bookedAppointments.some(
-          (appointment) =>
-            appointment.startTime ===
-            slot.startTime
-        );
-      }
-    )
-    .map((slot) => {
-      const hold = activeHolds.find(
-        (h: { startTime: string }) => h.startTime === slot.startTime
-      );
+// 9. Remove booked slots
+const availableSlots = slots
+  .filter((slot) => {
+    return !bookedAppointments.some(
+      (appointment) =>
+        appointment.startTime === slot.startTime
+    );
+  })
+  .map((slot) => {
+    const hold = activeHolds.find(
+      (h: { startTime: string }) =>
+        h.startTime === slot.startTime
+    );
 
-      return {
-        ...slot,
-        held: Boolean(hold),
-      };
-    })
-    .filter((slot) => !slot.held);
+    return {
+      ...slot,
+      held: Boolean(hold),
+    };
+  })
+  .filter((slot) => !slot.held);
 
-  return availableSlots;
+return availableSlots;
 };
 
 // Places a short-lived (5 minute) hold on a slot so the UI can walk the

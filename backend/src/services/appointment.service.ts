@@ -45,10 +45,11 @@ const bookAppointment = async (
 
   // 4. Get available slots
   const slots =
-    await slotService.getAvailableSlots(
-      doctorId,
-      dateString
-    );
+  await slotService.getAvailableSlots(
+    doctorId,
+    dateString,
+    true
+  );
 
   // 5. Check requested slot
   const slot = slots.find(

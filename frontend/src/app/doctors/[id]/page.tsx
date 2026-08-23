@@ -77,7 +77,7 @@ export default function DoctorDetailsPage() {
                   </h1>
 
                   <p className="mt-1 text-[#176b87]">
-                    {doctor.specialisation ||
+                    {
                       doctor.specialization ||
                       "General Medicine"}
                   </p>
