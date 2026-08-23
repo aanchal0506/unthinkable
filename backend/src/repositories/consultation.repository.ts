@@ -63,9 +63,24 @@ const updateAppointmentStatus = async (appointmentId: number) => {
   });
 };
 
+const updateAIResult = async (
+  id: number,
+  data: {
+    patientSummary?: string;
+    aiStatus?: "PENDING" | "COMPLETED" | "FAILED";
+    aiError?: string;
+  }
+) => {
+  return prisma.consultation.update({
+    where: { id },
+    data,
+  });
+};
+
 export default {
   createConsultation,
   findByAppointmentId,
   createPrescription,
   updateAppointmentStatus,
+  updateAIResult,
 };

@@ -2,7 +2,7 @@ import * as appointmentRepository from "../repositories/appointment.repository";
 import * as doctorRepository from "../repositories/doctor.repository";
 import * as userRepository from "../repositories/user.repository";
 import * as slotService from "./slot.service";
-import * as notificationService from "./notification.service";
+import * as notificationService from "./notification.service"
 import * as appointmentCalendarService from "./appointmentCalendar.service";
 import {
   buildBookingConfirmationPatientEmail,

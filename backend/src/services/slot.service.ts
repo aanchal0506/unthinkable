@@ -2,6 +2,8 @@ import * as availabilityRepository from "../repositories/avl.repository";
 import * as doctorRepository from "../repositories/doctor.repository";
 import * as appointmentRepository from "../repositories/appointment.repository";
 import * as leaveRepository from "../repositories/leave.repository";
+import * as slotHoldRepository from "../repositories/slotHold.repository";
+import * as userRepository from "../repositories/user.repository";
 
 const getDayOfWeek = (date: string) => {
   const day = new Date(`${date}T00:00:00`);
@@ -106,20 +108,118 @@ const getAvailableSlots = async (
       appointmentDate
     );
 
-  // 8. Remove booked slots
-  const availableSlots = slots.filter(
-    (slot) => {
-      return !bookedAppointments.some(
-        (appointment) =>
-          appointment.startTime ===
-          slot.startTime
+  // 8. Get active (unexpired) holds placed by other patients mid-booking
+  const activeHolds =
+    await slotHoldRepository.getActiveHoldsForDoctorAndDate(
+      doctorId,
+      appointmentDate
+    );
+
+  // 9. Remove booked and held slots
+  const availableSlots = slots
+    .filter(
+      (slot) => {
+        return !bookedAppointments.some(
+          (appointment) =>
+            appointment.startTime ===
+            slot.startTime
+        );
+      }
+    )
+    .map((slot) => {
+      const hold = activeHolds.find(
+        (h: { startTime: string }) => h.startTime === slot.startTime
       );
-    }
-  );
+
+      return {
+        ...slot,
+        held: Boolean(hold),
+      };
+    })
+    .filter((slot) => !slot.held);
 
   return availableSlots;
 };
 
+// Places a short-lived (5 minute) hold on a slot so the UI can walk the
+// patient through the symptom form before finalizing the booking, without
+// another patient snatching the same slot in the meantime. This is a UX
+// convenience layer only — the Appointment table's own unique constraint
+// (doctorId, date, startTime) remains the actual source of truth against
+// double-booking if two bookings somehow race past this check.
+const holdSlot = async (
+  doctorId: number,
+  dateString: string,
+  startTime: string,
+  patientUserId: number
+) => {
+  const doctor = await doctorRepository.getDoctorById(doctorId);
+
+  if (!doctor) {
+    throw new Error("Doctor not found");
+  }
+
+  const patient = await userRepository.getPatientProfileByUserId(
+    patientUserId
+  );
+
+  if (!patient) {
+    throw new Error("Patient profile not found");
+  }
+
+  const date = new Date(`${dateString}T00:00:00`);
+
+  if (isNaN(date.getTime())) {
+    throw new Error("Invalid date");
+  }
+
+  const slots = await getAvailableSlots(doctorId, dateString);
+
+  if (!slots.some((slot) => slot.startTime === startTime)) {
+    throw new Error("Selected time slot is not available");
+  }
+
+  try {
+    const hold = await slotHoldRepository.acquireHold(
+      doctorId,
+      date,
+      startTime,
+      patient.id
+    );
+
+    return {
+      holdId: hold.id,
+      expiresAt: hold.expiresAt,
+    };
+  } catch (error: any) {
+    if (error.message === "SLOT_HELD_BY_OTHER") {
+      throw new Error(
+        "This slot is currently held by another patient. Please choose a different slot or try again shortly."
+      );
+    }
+
+    throw error;
+  }
+};
+
+const releaseSlotHold = async (
+  doctorId: number,
+  dateString: string,
+  startTime: string
+) => {
+  const date = new Date(`${dateString}T00:00:00`);
+
+  if (isNaN(date.getTime())) {
+    throw new Error("Invalid date");
+  }
+
+  await slotHoldRepository.releaseHold(doctorId, date, startTime);
+
+  return { message: "Hold released" };
+};
+
 export {
   getAvailableSlots,
+  holdSlot,
+  releaseSlotHold,
 };
