@@ -3,6 +3,9 @@ import { Router } from "express";
 import * as leaveController from "../controllers/leave.controller";
 
 import { authenticate } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/role.middleware";
+import { validateBody } from "../middleware/validate.middleware";
+import { createLeaveSchema } from "../validators/schema";
 
 const router = Router();
 
@@ -10,6 +13,8 @@ const router = Router();
 router.post(
   "/",
   authenticate,
+  authorize("DOCTOR"),
+  validateBody(createLeaveSchema),
   leaveController.createLeave
 );
 

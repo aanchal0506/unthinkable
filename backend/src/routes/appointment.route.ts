@@ -4,6 +4,8 @@ import * as appointmentController from "../controllers/appointment.controller";
 
 import { authenticate } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/role.middleware";
+import { validateBody } from "../middleware/validate.middleware";
+import { bookAppointmentSchema } from "../validators/schema";
 
 const router = Router();
 
@@ -11,6 +13,7 @@ const router = Router();
 router.post(
   "/",
   authenticate,
+  validateBody(bookAppointmentSchema),
   appointmentController.bookAppointment
 );
 

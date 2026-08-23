@@ -2,6 +2,8 @@ import { Router } from "express";
 import * as doctorController from "../controllers/doctor.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/role.middleware";
+import { validateBody } from "../middleware/validate.middleware";
+import { createDoctorSchema } from "../validators/schema";
 
 const router = Router();
 
@@ -16,6 +18,7 @@ router.post(
     "/",
     authenticate,
     authorize("ADMIN"),
+    validateBody(createDoctorSchema),
     doctorController.createDoctor
 );
 
