@@ -8,7 +8,11 @@ import type {
 export const registerUser = async (
   data: RegisterRequest
 ): Promise<AuthResponse> => {
-  const response = await apiClient.post("/auth/register", data);
+  const response = await apiClient.post("/auth/register", {
+    ...data,
+    role: "PATIENT",
+  });
+
   return response.data;
 };
 
@@ -16,14 +20,22 @@ export const loginUser = async (
   data: LoginRequest
 ): Promise<AuthResponse> => {
   const response = await apiClient.post("/auth/login", data);
+
   return response.data;
 };
 
-export const logoutUser = async (): Promise<void> => {
-  await apiClient.post("/auth/logout");
+export const logoutUser = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+  }
 };
 
-export const getCurrentUser = async (): Promise<AuthResponse> => {
-  const response = await apiClient.get("/auth/me");
-  return response.data;
+export const saveAuthData = (data: AuthResponse) => {
+  if (typeof window === "undefined" || !data.token || !data.user) {
+    return;
+  }
+
+  localStorage.setItem("accessToken", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
 };

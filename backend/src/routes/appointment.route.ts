@@ -13,7 +13,6 @@ const router = Router();
 router.post(
   "/",
   authenticate,
-  validateBody(bookAppointmentSchema),
   appointmentController.bookAppointment
 );
 

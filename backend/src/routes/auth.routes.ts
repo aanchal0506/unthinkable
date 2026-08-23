@@ -10,7 +10,7 @@ import { registerSchema, loginSchema } from "../validators/schema";
 
 const router = express.Router();
 
-router.post("/register", validateBody(registerSchema), register);
-router.post("/login", validateBody(loginSchema), login);
+router.post("/register", register);
+router.post("/login", login);
 
 export default router;
