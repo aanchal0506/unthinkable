@@ -35,15 +35,19 @@ const createLeave = async (
       });
     }
 
-    const leave = await leaveService.createLeave(
+    const result = await leaveService.createLeave(
       req.user.id,
       date,
       reason
     );
 
     return res.status(201).json({
-      message: "Leave created successfully",
-      leave,
+      message:
+        result.affectedAppointments > 0
+          ? `Leave created successfully. ${result.affectedAppointments} existing appointment(s) were cancelled and the affected patient(s) notified.`
+          : "Leave created successfully",
+      leave: result.leave,
+      affectedAppointments: result.affectedAppointments,
     });
   } catch (error: any) {
     console.error("Create leave error:", error);

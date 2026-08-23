@@ -75,7 +75,36 @@ const getConsultation = async (req: Request, res: Response) => {
   }
 };
 
+const regeneratePatientSummary = async (req: Request, res: Response) => {
+  try {
+    const appointmentId = Number(req.params.appointmentId);
+
+    const doctorUserId = Number((req as any).user.id);
+
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      return res.status(400).json({
+        message: "Invalid appointment ID",
+      });
+    }
+
+    const consultation = await consultationService.regeneratePatientSummary(
+      appointmentId,
+      doctorUserId
+    );
+
+    return res.status(200).json({
+      message: "Patient summary regeneration attempted",
+      consultation,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
 export default {
   createConsultation,
   getConsultation,
+  regeneratePatientSummary,
 };

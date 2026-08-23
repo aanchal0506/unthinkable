@@ -64,7 +64,31 @@ const getSymptoms = async (req: Request, res: Response) => {
   }
 };
 
+const regenerateSummary = async (req: Request, res: Response) => {
+  try {
+    const appointmentId = Number(req.params.appointmentId);
+
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      return res.status(400).json({
+        message: "Invalid appointment ID",
+      });
+    }
+
+    const result = await symptomService.regenerateSummary(appointmentId);
+
+    return res.status(200).json({
+      message: "AI summary regeneration attempted",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
 export default {
   submitSymptoms,
   getSymptoms,
+  regenerateSummary,
 };

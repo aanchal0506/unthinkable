@@ -281,11 +281,14 @@ const cancelAppointment = async (
       });
     }
 
+    const { reason } = req.body || {};
+
     const appointment =
       await appointmentService.cancelAppointment(
         appointmentId,
         req.user.id,
-        req.user.role
+        req.user.role,
+        typeof reason === "string" ? reason : undefined
       );
 
     return res.status(200).json({
