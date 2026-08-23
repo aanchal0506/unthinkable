@@ -16,6 +16,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Google Calendar OAuth (tokens stored encrypted at rest, see utils/crypto.util.ts)
+  googleRefreshToken    String?
+  googleAccessToken     String?
+  googleTokenExpiry     DateTime?
+  googleCalendarLinked  Boolean   @default(false)
+
   patientProfile PatientProfile?
   doctorProfile  DoctorProfile?
 }
@@ -95,6 +101,15 @@ model Appointment {
 
   status AppointmentStatus @default(BOOKED)
 
+  // Google Calendar event ids created on the patient's / doctor's own calendars.
+  // Either may be null if that side hasn't linked Google Calendar.
+  googlePatientEventId String?
+  googleDoctorEventId  String?
+
+  cancelledBy    Role?
+  cancelReason   String?
+  reminderSentAt DateTime?
+
   patient PatientProfile @relation("PatientAppointments", fields: [patientId], references: [id])
 
   doctor DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
@@ -109,6 +124,61 @@ model Appointment {
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
   @@index([patientId, date])
+}
+
+// Short-lived hold placed on a slot while a patient completes the booking
+// flow (symptom form, review, confirm). This lets the UI say "this slot is
+// held for the next 5 minutes" and stops two patients from racing to book
+// the same slot; the Appointment's own unique constraint is still the final
+// source of truth if two requests land at the exact same instant.
+model SlotHold {
+  id        Int      @id @default(autoincrement())
+  doctorId  Int
+  date      DateTime
+  startTime String
+  patientId Int
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, date, startTime])
+  @@index([expiresAt])
+}
+
+// Durable log of every outbound notification (email today, could grow to
+// SMS/push later) so that failures can be retried by a background job
+// instead of silently disappearing.
+model NotificationLog {
+  id            Int                @id @default(autoincrement())
+  type          NotificationType
+  recipient     String
+  subject       String
+  payload       Json
+  status        NotificationStatus @default(PENDING)
+  attempts      Int                @default(0)
+  lastError     String?
+  appointmentId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([appointmentId])
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION_PATIENT
+  BOOKING_CONFIRMATION_DOCTOR
+  APPOINTMENT_CANCELLATION
+  APPOINTMENT_REMINDER
+  LEAVE_CONFLICT
+  MEDICATION_REMINDER
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 model SymptomSubmission {
@@ -138,6 +208,11 @@ model Consultation {
   clinicalNotes        String
   diagnosis            String?
   followUpInstructions String?
+
+  // LLM-generated patient-friendly rewrite of the notes above
+  patientSummary String?
+  aiStatus       AIStatus @default(PENDING)
+  aiError        String?
 
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 

@@ -2,6 +2,7 @@ import consultationRepository from "../repositories/consultation.repository";
 import * as appointmentRepository from "../repositories/appointment.repository";
 import { getDoctorByUserId } from "../repositories/doctor.repository";
 import { parseDuration, generateReminders } from "./reminder.service";
+import * as llmService from "./llm.service";
 
 const createConsultation = async (
   appointmentId: number,
@@ -100,6 +101,27 @@ const createConsultation = async (
     appointmentId
   );
 
+  // Best-effort: generate the patient-friendly post-visit summary. Failures
+  // (LLM timeout/outage) never break consultation creation — aiStatus just
+  // ends up FAILED and the doctor/patient can trigger a manual retry.
+  const llmResult = await llmService.generatePostVisitSummary(
+    clinicalNotes.trim(),
+    prescriptions,
+    followUpInstructions?.trim()
+  );
+
+  if (llmResult.ok) {
+    await consultationRepository.updateAIResult(consultation.id, {
+      patientSummary: llmResult.data,
+      aiStatus: "COMPLETED",
+    });
+  } else {
+    await consultationRepository.updateAIResult(consultation.id, {
+      aiStatus: "FAILED",
+      aiError: llmResult.error,
+    });
+  }
+
   return consultationRepository.findByAppointmentId(
     appointmentId
   );
@@ -131,7 +153,56 @@ const getConsultation = async (
   return consultationRepository.findByAppointmentId(appointmentId);
 };
 
+// Manual retry if the post-visit LLM summary previously failed.
+const regeneratePatientSummary = async (
+  appointmentId: number,
+  doctorUserId: number
+) => {
+  const appointment =
+    await appointmentRepository.getAppointmentById(appointmentId);
+
+  if (!appointment) {
+    throw new Error("Appointment not found");
+  }
+
+  const doctor = await getDoctorByUserId(doctorUserId);
+
+  if (!doctor || appointment.doctorId !== doctor.id) {
+    throw new Error(
+      "You are not authorized to modify this consultation"
+    );
+  }
+
+  const consultation =
+    await consultationRepository.findByAppointmentId(appointmentId);
+
+  if (!consultation) {
+    throw new Error("Consultation not found");
+  }
+
+  const llmResult = await llmService.generatePostVisitSummary(
+    consultation.clinicalNotes,
+    consultation.prescriptions,
+    consultation.followUpInstructions || undefined
+  );
+
+  if (llmResult.ok) {
+    await consultationRepository.updateAIResult(consultation.id, {
+      patientSummary: llmResult.data,
+      aiStatus: "COMPLETED",
+    });
+  } else {
+    await consultationRepository.updateAIResult(consultation.id, {
+      aiStatus: "FAILED",
+      aiError: llmResult.error,
+    });
+  }
+
+  return consultationRepository.findByAppointmentId(appointmentId);
+};
+
 export default {
   createConsultation,
   getConsultation,
+  regeneratePatientSummary,
 };

@@ -2,7 +2,13 @@ import * as appointmentRepository from "../repositories/appointment.repository";
 import * as doctorRepository from "../repositories/doctor.repository";
 import * as userRepository from "../repositories/user.repository";
 import * as slotService from "./slot.service";
-import { sendBookingConfirmationToDoctor, sendBookingConfirmationToPatient,  } from "./email.service";
+import * as notificationService from "./notification.service";
+import * as appointmentCalendarService from "./appointmentCalendar.service";
+import {
+  buildBookingConfirmationPatientEmail,
+  buildBookingConfirmationDoctorEmail,
+  buildCancellationEmail,
+} from "./email.service";
 
 const bookAppointment = async (
   patientUserId: number,
@@ -73,57 +79,73 @@ const bookAppointment = async (
     );
   }
 
-  let appointment;
+  // 7 & 8. Atomically create (or rebook) the appointment and release the
+  // slot hold. The database's unique constraint on
+  // (doctorId, date, startTime) is what actually prevents two simultaneous
+  // bookings from succeeding — everything before this point is a
+  // best-effort UX check that can still race.
+  const appointment =
+    await appointmentRepository.bookSlotTransactionally({
+      doctorId,
+      date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      patientId: patient.id,
+      existingCancelledAppointmentId:
+        existingAppointment?.status === "CANCELLED"
+          ? existingAppointment.id
+          : undefined,
+    });
 
-  // 7. Rebook previously cancelled appointment
-  if (
-    existingAppointment &&
-    existingAppointment.status === "CANCELLED"
-  ) {
-    appointment =
-      await appointmentRepository.rebookAppointment(
-        existingAppointment.id,
-        patient.id,
-        slot.endTime
-      );
-  } else {
-    // 8. Create new appointment
-    appointment =
-      await appointmentRepository.createAppointment({
-        patientId: patient.id,
-        doctorId,
-        date,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-      });
-  }
-
-  // 9. Get patient + doctor email details
+  // 9. Get patient + doctor email/name details
   const appointmentDetails =
     await appointmentRepository.getAppointmentNotificationDetails(
       appointment.id
     );
 
-  // 10. Send booking confirmation to both
+  // 10. Send booking confirmation to both + sync Google Calendar.
+  // Both are best-effort: failures are logged/retried but never bubble up
+  // and break the booking response.
   if (appointmentDetails) {
-    await Promise.all([
-      sendBookingConfirmationToPatient(
-        appointmentDetails.patient.user.email,
-        appointmentDetails.patient.user.name,
-        appointmentDetails.doctor.user.name,
-        appointmentDetails.date,
-        appointmentDetails.startTime,
-        appointmentDetails.endTime
-      ),
+    const patientEmail = buildBookingConfirmationPatientEmail(
+      appointmentDetails.patient.user.name,
+      appointmentDetails.doctor.user.name,
+      appointmentDetails.date,
+      appointmentDetails.startTime,
+      appointmentDetails.endTime
+    );
 
-      sendBookingConfirmationToDoctor(
-        appointmentDetails.doctor.user.email,
-        appointmentDetails.doctor.user.name,
-        appointmentDetails.patient.user.name,
-        appointmentDetails.date,
-        appointmentDetails.startTime,
-        appointmentDetails.endTime
+    const doctorEmail = buildBookingConfirmationDoctorEmail(
+      appointmentDetails.doctor.user.name,
+      appointmentDetails.patient.user.name,
+      appointmentDetails.date,
+      appointmentDetails.startTime,
+      appointmentDetails.endTime
+    );
+
+    await Promise.all([
+      notificationService.dispatch(
+        "BOOKING_CONFIRMATION_PATIENT",
+        appointmentDetails.patient.user.email,
+        patientEmail.subject,
+        patientEmail.html,
+        appointment.id
       ),
+      notificationService.dispatch(
+        "BOOKING_CONFIRMATION_DOCTOR",
+        appointmentDetails.doctor.user.email,
+        doctorEmail.subject,
+        doctorEmail.html,
+        appointment.id
+      ),
+      appointmentCalendarService.syncCreate({
+        id: appointment.id,
+        date: appointmentDetails.date,
+        startTime: appointmentDetails.startTime,
+        endTime: appointmentDetails.endTime,
+        patient: { user: appointmentDetails.patient.user as any },
+        doctor: { user: appointmentDetails.doctor.user as any },
+      }),
     ]);
   }
 
@@ -216,7 +238,8 @@ const completeAppointment = async (
 const cancelAppointment = async (
   appointmentId: number,
   userId: number,
-  role: "PATIENT" | "DOCTOR" | "ADMIN"
+  role: "PATIENT" | "DOCTOR" | "ADMIN",
+  reason?: string
 ) => {
   // 1. Find appointment
   const appointment =
@@ -271,9 +294,66 @@ const cancelAppointment = async (
 
   // 5. Admin can cancel any appointment
 
-  return await appointmentRepository.cancelAppointment(
-    appointmentId
-  );
+  const details =
+    await appointmentRepository.getAppointmentNotificationDetails(
+      appointmentId
+    );
+
+  const cancelled =
+    await appointmentRepository.cancelAppointmentWithMeta(
+      appointmentId,
+      role,
+      reason
+    );
+
+  // 6. Notify the other party + tear down Google Calendar events.
+  // Best-effort: never allowed to fail the cancellation itself.
+  if (details) {
+    const cancelledByPatient = role === "PATIENT";
+
+    const recipientEmail = cancelledByPatient
+      ? details.doctor.user.email
+      : details.patient.user.email;
+
+    const recipientName = cancelledByPatient
+      ? details.doctor.user.name
+      : details.patient.user.name;
+
+    const otherPartyName = cancelledByPatient
+      ? details.patient.user.name
+      : details.doctor.user.name;
+
+    const { subject, html } = buildCancellationEmail(
+      recipientName,
+      otherPartyName,
+      details.date,
+      details.startTime,
+      details.endTime,
+      reason
+    );
+
+    await Promise.all([
+      notificationService.dispatch(
+        "APPOINTMENT_CANCELLATION",
+        recipientEmail,
+        subject,
+        html,
+        appointmentId
+      ),
+      appointmentCalendarService.syncDelete({
+        id: appointmentId,
+        date: details.date,
+        startTime: details.startTime,
+        endTime: details.endTime,
+        googlePatientEventId: appointment.googlePatientEventId,
+        googleDoctorEventId: appointment.googleDoctorEventId,
+        patient: { user: details.patient.user as any },
+        doctor: { user: details.doctor.user as any },
+      }),
+    ]);
+  }
+
+  return cancelled;
 };
 
 const getDoctorAppointmentDetails = async (
@@ -310,7 +390,7 @@ const getPatientAppointmentsService = async (
     throw new Error("Patient profile not found");
   }
 
-  return await getPatientAppointments(patient.id);
+  return await appointmentRepository.getPatientAppointments(patient.id);
 };
 
 const getPatientAppointmentDetailsService = async (
