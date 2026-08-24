@@ -19,7 +19,7 @@ export default function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <ProtectedRoute allow={allow}>
+    <ProtectedRoute>
       <div className="flex min-h-screen bg-paper">
         <Sidebar
           mobileOpen={mobileOpen}

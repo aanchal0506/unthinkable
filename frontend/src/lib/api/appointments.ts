@@ -85,3 +85,47 @@ export const cancelAppointment = async (
 
   return response.data;
 };
+
+// Retries AI pre-visit summary generation if it previously failed
+// (LLM timeout/outage), without resubmitting the symptoms themselves.
+export const regenerateSymptomSummary = async (
+  appointmentId: number
+) => {
+  const response = await apiClient.post(
+    `/appointments/${appointmentId}/symptoms/regenerate-summary`
+  );
+
+  return response.data;
+};
+
+// ---- Doctor-side appointment endpoints ----
+
+export const getMyDoctorAppointments = async (): Promise<
+  Appointment[]
+> => {
+  const response = await apiClient.get(
+    "/appointments/doctor/my"
+  );
+
+  return response.data.appointments;
+};
+
+export const getDoctorAppointmentDetails = async (
+  appointmentId: number
+) => {
+  const response = await apiClient.get(
+    `/appointments/doctor/appointments/${appointmentId}`
+  );
+
+  return response.data.appointment;
+};
+
+export const completeAppointment = async (
+  appointmentId: number
+): Promise<Appointment> => {
+  const response = await apiClient.patch<AppointmentResponse>(
+    `/appointments/${appointmentId}/complete`
+  );
+
+  return response.data.appointment;
+};

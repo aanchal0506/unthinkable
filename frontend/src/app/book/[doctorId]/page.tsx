@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import DatePicker from "@/components/booking/DatePicker";
 import SlotGrid from "@/components/booking/SlotGrid";
 import BookingSummary from "@/components/booking/BookingSummary";
 import Loading from "@/components/ui/Loading";
+import Alert from "@/components/ui/Alert";
 
 import { getDoctorById } from "@/lib/api/doctors";
 import {
@@ -25,24 +27,17 @@ export default function BookingPage() {
 
   const doctorId = Number(params.doctorId);
 
-  const [doctor, setDoctor] =
-    useState<Doctor | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
 
-  const [selectedDate, setSelectedDate] =
-    useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
   const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [selectedSlot, setSelectedSlot] =
-    useState<TimeSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
-  const [loadingDoctor, setLoadingDoctor] =
-    useState(true);
+  const [loadingDoctor, setLoadingDoctor] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [loadingSlots, setLoadingSlots] =
-    useState(false);
-
-  const [holding, setHolding] =
-    useState(false);
+  const [holding, setHolding] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -53,15 +48,11 @@ export default function BookingPage() {
       try {
         setLoadingDoctor(true);
 
-        const data =
-          await getDoctorById(doctorId);
+        const data = await getDoctorById(doctorId);
 
         setDoctor(data);
       } catch (error: any) {
-        setError(
-          error?.response?.data?.message ||
-            "Unable to load doctor."
-        );
+        setError(error?.response?.data?.message || "Unable to load doctor.");
       } finally {
         setLoadingDoctor(false);
       }
@@ -81,19 +72,14 @@ export default function BookingPage() {
         setError("");
         setSelectedSlot(null);
 
-        const data =
-          await getAvailableSlots(
-            doctorId,
-            selectedDate
-          );
+        const data = await getAvailableSlots(doctorId, selectedDate);
 
         setSlots(data);
       } catch (error: any) {
         setSlots([]);
 
         setError(
-          error?.response?.data?.message ||
-            "Unable to load available slots."
+          error?.response?.data?.message || "Unable to load available slots."
         );
       } finally {
         setLoadingSlots(false);
@@ -112,32 +98,23 @@ export default function BookingPage() {
       setHolding(true);
       setError("");
 
-      const result = await holdSlot(
-        doctorId,
-        selectedDate,
-        selectedSlot.startTime
-      );
+      const result = await holdSlot(doctorId, selectedDate, selectedSlot.startTime);
 
       sessionStorage.setItem(
         "bookingData",
         JSON.stringify({
           doctorId,
           doctorName: doctor?.name,
-          specialization:
-            doctor?.specialization,
+          specialization: doctor?.specialization,
           date: selectedDate,
-          startTime:
-            selectedSlot.startTime,
-          endTime:
-            selectedSlot.endTime,
+          startTime: selectedSlot.startTime,
+          endTime: selectedSlot.endTime,
           holdId: result.holdId,
           expiresAt: result.expiresAt,
         })
       );
 
-      router.push(
-        `/book/${doctorId}/symptoms`
-      );
+      router.push(`/book/${doctorId}/symptoms`);
     } catch (error: any) {
       setError(
         error?.response?.data?.message ||
@@ -150,7 +127,7 @@ export default function BookingPage() {
 
   if (loadingDoctor) {
     return (
-      <AppShell>
+      <AppShell allow={["PATIENT"]}>
         <Loading />
       </AppShell>
     );
@@ -158,98 +135,71 @@ export default function BookingPage() {
 
   if (!doctor) {
     return (
-      <AppShell>
+      <AppShell allow={["PATIENT"]}>
         <div className="mx-auto max-w-3xl">
           <Link
             href="/doctors"
-            className="text-sm text-[#687386] hover:text-[#176b87]"
+            className="flex items-center gap-1.5 text-sm text-ink-soft hover:text-pine"
           >
-            ← Back to doctors
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to doctors
           </Link>
 
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-            {error || "Doctor not found."}
-          </div>
+          <Alert tone="error" className="mt-6">{error || "Doctor not found."}</Alert>
         </div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell>
+    <AppShell allow={["PATIENT"]}>
       <div className="mx-auto max-w-6xl">
         <Link
           href={`/doctors/${doctor.id}`}
-          className="text-sm text-[#687386] hover:text-[#176b87]"
+          className="flex items-center gap-1.5 text-sm text-ink-soft hover:text-pine"
         >
-          ← Back to doctor
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to doctor
         </Link>
 
         <div className="mt-6 mb-8">
-          <p className="text-sm font-medium text-[#176b87]">
-            Book an appointment
-          </p>
-
-          <h1 className="mt-1 text-2xl font-semibold text-[#172033]">
-            Choose a date and time
-          </h1>
-
-          <p className="mt-2 text-sm text-[#687386]">
-            Select an available slot with{" "}
-            <span className="font-medium text-[#344054]">
-              {doctor.name}
-            </span>
-            .
+          <p className="eyebrow mb-2">Book an appointment</p>
+          <h1 className="font-display text-[26px] text-ink">Choose a date and time</h1>
+          <p className="mt-1.5 text-sm text-ink-soft">
+            Select an available slot with <span className="font-medium text-ink">{doctor.name}</span>.
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <Alert tone="error" className="mb-6">{error}</Alert>}
 
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
             <section>
-              <h2 className="mb-3 text-sm font-semibold text-[#344054]">
-                Select date
-              </h2>
-
-              <DatePicker
-                selectedDate={selectedDate}
-                onChange={setSelectedDate}
-              />
+              <h2 className="mb-3 text-sm font-semibold text-ink">Select date</h2>
+              <DatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
             </section>
 
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[#344054]">
-                  Available times
-                </h2>
+                <h2 className="text-sm font-semibold text-ink">Available times</h2>
 
                 {selectedDate && (
-                  <span className="text-xs text-[#98a2b3]">
+                  <span className="font-mono text-[12px] text-ink-faint">
                     {slots.length} available
                   </span>
                 )}
               </div>
 
               {!selectedDate ? (
-                <div className="rounded-lg border border-dashed border-[#d9dee7] bg-white p-8 text-center">
-                  <p className="text-sm text-[#687386]">
-                    Select a date to see available
-                    appointment times.
+                <div className="rounded-md border border-dashed border-line-strong bg-surface/50 p-8 text-center">
+                  <p className="text-sm text-ink-soft">
+                    Select a date to see available appointment times.
                   </p>
                 </div>
               ) : loadingSlots ? (
                 <Loading />
               ) : (
-                <SlotGrid
-                  slots={slots}
-                  selectedSlot={selectedSlot}
-                  onSelect={setSelectedSlot}
-                />
+                <SlotGrid slots={slots} selectedSlot={selectedSlot} onSelect={setSelectedSlot} />
               )}
             </section>
           </div>
@@ -264,14 +214,10 @@ export default function BookingPage() {
                 onConfirm={handleContinue}
               />
             ) : (
-              <div className="rounded-xl border border-[#e4e7ec] bg-white p-5">
-                <p className="text-sm font-semibold text-[#172033]">
-                  Appointment summary
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-[#687386]">
-                  Select a date and appointment time to
-                  continue.
+              <div className="rounded-md border border-line bg-surface p-5">
+                <p className="font-display text-[16px] text-ink">Appointment summary</p>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">
+                  Select a date and appointment time to continue.
                 </p>
               </div>
             )}
