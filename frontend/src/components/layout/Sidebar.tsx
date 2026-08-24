@@ -2,6 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Search,
+  ClipboardList,
+  CalendarOff,
+  Users,
+  Settings,
+  LogOut,
+  X,
+} from "lucide-react";
+
 import { clearAuth, getStoredUser } from "@/lib/auth";
 
 interface SidebarProps {
@@ -19,57 +30,22 @@ export default function Sidebar({
   const user = getStoredUser();
 
   const patientLinks = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: "⌂",
-    },
-    {
-      label: "Find a doctor",
-      href: "/doctors",
-      icon: "⌕",
-    },
-    {
-      label: "My appointments",
-      href: "/appointments",
-      icon: "▣",
-    },
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Find a doctor", href: "/doctors", icon: Search },
+    { label: "My appointments", href: "/appointments", icon: ClipboardList },
+    { label: "Calendar & settings", href: "/settings", icon: Settings },
   ];
 
   const doctorLinks = [
-    {
-      label: "Dashboard",
-      href: "/doctor",
-      icon: "⌂",
-    },
-    {
-      label: "Appointments",
-      href: "/doctor/appointments",
-      icon: "▣",
-    },
-    {
-      label: "Patients",
-      href: "/doctor/patients",
-      icon: "♙",
-    },
-    {
-      label: "Availability",
-      href: "/doctor/availability",
-      icon: "◷",
-    },
+    { label: "Dashboard", href: "/doctor", icon: LayoutDashboard },
+    { label: "Appointments", href: "/doctor/appointments", icon: ClipboardList },
+    { label: "Leave", href: "/doctor/leaves", icon: CalendarOff },
+    { label: "Calendar & settings", href: "/settings", icon: Settings },
   ];
 
   const adminLinks = [
-    {
-      label: "Dashboard",
-      href: "/admin",
-      icon: "⌂",
-    },
-    {
-      label: "Doctors",
-      href: "/admin/doctors",
-      icon: "♙",
-    },
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { label: "Doctors", href: "/admin/doctors", icon: Users },
   ];
 
   const links =
@@ -78,6 +54,13 @@ export default function Sidebar({
       : user?.role === "DOCTOR"
         ? doctorLinks
         : patientLinks;
+
+  const homeHref =
+    user?.role === "ADMIN"
+      ? "/admin"
+      : user?.role === "DOCTOR"
+        ? "/doctor"
+        : "/dashboard";
 
   const handleLogout = () => {
     clearAuth();
@@ -89,7 +72,7 @@ export default function Sidebar({
       {mobileOpen && (
         <button
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
           aria-label="Close menu"
         />
       )}
@@ -97,92 +80,83 @@ export default function Sidebar({
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 flex w-64 flex-col
-          border-r border-[#e4e7ec] bg-white
+          bg-pine-deep text-white
           transition-transform duration-200
           lg:static lg:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="flex h-16 items-center border-b border-[#e4e7ec] px-5">
+        <div className="flex h-16 items-center justify-between px-5">
           <Link
-            href={
-              user?.role === "ADMIN"
-                ? "/admin"
-                : user?.role === "DOCTOR"
-                  ? "/doctor"
-                  : "/dashboard"
-            }
-            className="flex items-center gap-3"
+            href={homeHref}
+            className="flex items-center gap-2.5"
             onClick={onClose}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#176b87] text-sm font-semibold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-sm border border-white/30 font-display text-sm">
               C
-            </div>
+            </span>
 
             <div>
-              <p className="text-sm font-semibold text-[#172033]">
-                CarePoint
-              </p>
-
-              <p className="text-[11px] text-[#98a2b3]">
-                Healthcare Manager
+              <p className="font-display text-[15px] leading-none">CarePoint</p>
+              <p className="mt-1 font-mono text-[9.5px] uppercase tracking-label text-white/45">
+                {user?.role?.toLowerCase() || "patient"} portal
               </p>
             </div>
           </Link>
+
+          <button
+            onClick={onClose}
+            className="rounded-sm p-1 text-white/60 hover:bg-white/10 lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="flex-1 px-3 py-6">
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-[#98a2b3]">
-            Menu
-          </p>
+        <nav className="flex-1 px-3 py-4">
+          {links.map((link) => {
+            const active =
+              pathname === link.href ||
+              pathname.startsWith(`${link.href}/`);
 
-          <nav className="mt-3 space-y-1">
-            {links.map((link) => {
-              const active =
-                pathname === link.href ||
-                pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={onClose}
+                className={`
+                  mb-1 flex items-center gap-2.5 rounded-sm px-3 py-2
+                  text-[13.5px] transition-colors
+                  ${
+                    active
+                      ? "bg-white/10 font-medium text-white"
+                      : "text-white/65 hover:bg-white/5 hover:text-white"
+                  }
+                `}
+              >
+                <link.icon className="h-4 w-4" strokeWidth={1.75} />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={onClose}
-                  className={`
-                    flex items-center gap-3 rounded-lg px-3 py-2.5
-                    text-sm transition-colors
-                    ${
-                      active
-                        ? "bg-[#edf6f8] font-medium text-[#176b87]"
-                        : "text-[#667085] hover:bg-[#f7f8fa] hover:text-[#172033]"
-                    }
-                  `}
-                >
-                  <span className="w-5 text-center text-base">
-                    {link.icon}
-                  </span>
-
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="border-t border-[#e4e7ec] p-4">
+        <div className="border-t border-white/10 p-4">
           <div className="mb-3 px-2">
-            <p className="truncate text-sm font-medium text-[#172033]">
+            <p className="truncate text-sm font-medium text-white">
               {user?.name || "User"}
             </p>
 
-            <p className="mt-0.5 text-xs capitalize text-[#98a2b3]">
-              {user?.role?.toLowerCase() || "patient"}
+            <p className="mt-0.5 truncate font-mono text-[11px] text-white/50">
+              {user?.email || ""}
             </p>
           </div>
 
           <button
             onClick={handleLogout}
-            className="w-full rounded-lg px-3 py-2 text-left text-sm text-[#667085] hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-2.5 rounded-sm px-3 py-2 text-left text-[13.5px] text-white/65 hover:bg-white/5 hover:text-white"
           >
+            <LogOut className="h-4 w-4" strokeWidth={1.75} />
             Sign out
           </button>
         </div>

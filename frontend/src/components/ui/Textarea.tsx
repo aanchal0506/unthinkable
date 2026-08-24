@@ -1,16 +1,16 @@
-import type { InputHTMLAttributes } from "react";
+import type { TextareaHTMLAttributes } from "react";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
 
-export default function Input({
+export default function Textarea({
   label,
   error,
   className = "",
   ...props
-}: InputProps) {
+}: TextareaProps) {
   return (
     <div className="space-y-1.5">
       {label && (
@@ -19,9 +19,9 @@ export default function Input({
         </label>
       )}
 
-      <input
+      <textarea
         className={`
-          w-full rounded-sm border border-line-strong
+          w-full min-h-[100px] resize-y rounded-sm border border-line-strong
           bg-surface px-3.5 py-2.5 text-sm text-ink
           outline-none transition-colors
           placeholder:text-ink-faint

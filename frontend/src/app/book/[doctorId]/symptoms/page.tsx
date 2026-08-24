@@ -3,9 +3,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import Loading from "@/components/ui/Loading";
+import Alert from "@/components/ui/Alert";
 
 import {
   bookAppointment,
@@ -51,8 +53,7 @@ export default function SymptomsPage() {
 
   const doctorId = Number(params.doctorId);
 
-  const [booking, setBooking] =
-    useState<BookingData | null>(null);
+  const [booking, setBooking] = useState<BookingData | null>(null);
 
   const [symptoms, setSymptoms] = useState("");
 
@@ -62,9 +63,7 @@ export default function SymptomsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(
-      "bookingData"
-    );
+    const stored = sessionStorage.getItem("bookingData");
 
     if (!stored) {
       router.replace(`/book/${doctorId}`);
@@ -72,9 +71,7 @@ export default function SymptomsPage() {
     }
 
     try {
-      const parsed = JSON.parse(
-        stored
-      ) as BookingData;
+      const parsed = JSON.parse(stored) as BookingData;
 
       setBooking(parsed);
     } catch {
@@ -86,9 +83,7 @@ export default function SymptomsPage() {
     }
   }, [doctorId, router]);
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!booking) {
@@ -96,9 +91,7 @@ export default function SymptomsPage() {
     }
 
     if (!symptoms.trim()) {
-      setError(
-        "Please describe your symptoms before continuing."
-      );
+      setError("Please describe your symptoms before continuing.");
       return;
     }
 
@@ -107,52 +100,36 @@ export default function SymptomsPage() {
       setError("");
 
       /*
-       * Step 1:
-       * Create the appointment using the held slot.
+       * Step 1: Create the appointment using the held slot.
        */
-      const appointment =
-        await bookAppointment(
-          booking.doctorId,
-          booking.date,
-          booking.startTime
-        );
-
-      /*
-       * Step 2:
-       * Attach symptoms to the appointment.
-       */
-      await submitSymptoms(
-        appointment.id,
-        symptoms.trim()
+      const appointment = await bookAppointment(
+        booking.doctorId,
+        booking.date,
+        booking.startTime
       );
 
       /*
-       * Clear temporary booking state.
+       * Step 2: Attach symptoms to the appointment. The backend generates an
+       * AI pre-visit summary (urgency, chief complaint, suggested
+       * questions) from this in the background.
        */
-      sessionStorage.removeItem(
-        "bookingData"
-      );
+      await submitSymptoms(appointment.id, symptoms.trim());
 
-      /*
-       * Store confirmation temporarily so
-       * the confirmation page can display it.
-       */
+      sessionStorage.removeItem("bookingData");
+
       sessionStorage.setItem(
         "appointmentConfirmation",
         JSON.stringify({
           appointmentId: appointment.id,
           doctorName: booking.doctorName,
-          specialization:
-            booking.specialization,
+          specialization: booking.specialization,
           date: booking.date,
           startTime: booking.startTime,
           endTime: booking.endTime,
         })
       );
 
-      router.push(
-        `/book/${doctorId}/success`
-      );
+      router.push(`/book/${doctorId}/success`);
     } catch (error: any) {
       setError(
         error?.response?.data?.message ||
@@ -165,7 +142,7 @@ export default function SymptomsPage() {
 
   if (loading) {
     return (
-      <AppShell>
+      <AppShell allow={["PATIENT"]}>
         <Loading />
       </AppShell>
     );
@@ -176,71 +153,59 @@ export default function SymptomsPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell allow={["PATIENT"]}>
       <div className="mx-auto max-w-4xl">
         <Link
           href={`/book/${doctorId}`}
-          className="text-sm text-[#687386] hover:text-[#176b87]"
+          className="flex items-center gap-1.5 text-sm text-ink-soft hover:text-pine"
         >
-          ← Back to appointment selection
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to appointment selection
         </Link>
 
         <div className="mt-6 mb-8">
-          <p className="text-sm font-medium text-[#176b87]">
-            Almost there
-          </p>
-
-          <h1 className="mt-1 text-2xl font-semibold text-[#172033]">
-            Tell your doctor what’s going on
+          <p className="eyebrow mb-2">Almost there</p>
+          <h1 className="font-display text-[26px] text-ink">
+            Tell your doctor what's going on
           </h1>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#687386]">
-            Sharing your symptoms beforehand gives your
-            doctor some context before the appointment.
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-soft">
+            Sharing your symptoms beforehand gives your doctor useful context
+            — and lets us prepare a short AI summary with suggested
+            questions before your visit.
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
           <form
             onSubmit={handleSubmit}
-            className="rounded-xl border border-[#e4e7ec] bg-white p-6 sm:p-7"
+            className="rounded-md border border-line bg-surface p-6 sm:p-7"
           >
             <div>
-              <label
-                htmlFor="symptoms"
-                className="text-sm font-medium text-[#344054]"
-              >
+              <label htmlFor="symptoms" className="text-sm font-medium text-ink">
                 What symptoms are you experiencing?
               </label>
 
-              <p className="mt-1 text-xs text-[#98a2b3]">
-                Include when they started, how they feel,
-                and anything that makes them better or
-                worse.
+              <p className="mt-1 text-xs text-ink-faint">
+                Include when they started, how they feel, and anything that
+                makes them better or worse.
               </p>
 
               <textarea
                 id="symptoms"
                 value={symptoms}
-                onChange={(event) =>
-                  setSymptoms(event.target.value)
-                }
+                onChange={(event) => setSymptoms(event.target.value)}
                 placeholder="For example: I've had a persistent headache since yesterday..."
                 rows={8}
-                className="mt-3 w-full resize-none rounded-lg border border-[#d9dee7] px-4 py-3 text-sm text-[#344054] outline-none transition placeholder:text-[#98a2b3] focus:border-[#176b87] focus:ring-2 focus:ring-[#176b87]/10"
+                className="mt-3 w-full resize-none rounded-sm border border-line-strong px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-pine focus:ring-1 focus:ring-pine"
               />
             </div>
 
-            {error && (
-              <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700">
-                {error}
-              </div>
-            )}
+            {error && <Alert tone="error" className="mt-5">{error}</Alert>}
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Link
                 href={`/book/${doctorId}`}
-                className="rounded-lg border border-[#d9dee7] px-5 py-2.5 text-center text-sm font-medium text-[#344054] hover:bg-[#f7f8fa]"
+                className="rounded-sm border border-line-strong px-5 py-2.5 text-center text-sm font-medium text-ink hover:bg-paper"
               >
                 Go back
               </Link>
@@ -248,70 +213,44 @@ export default function SymptomsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-lg bg-[#176b87] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#11556b] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-sm bg-pine px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-pine-deep disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting
-                  ? "Booking appointment..."
-                  : "Confirm appointment"}
+                {submitting ? "Booking appointment…" : "Confirm appointment"}
               </button>
             </div>
           </form>
 
-          <aside className="h-fit rounded-xl border border-[#e4e7ec] bg-white p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#98a2b3]">
-              Appointment
-            </p>
+          <aside className="h-fit rounded-md border border-line bg-surface p-5">
+            <p className="eyebrow">Appointment</p>
 
-            <div className="mt-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e7f2f5] font-semibold text-[#176b87]">
-                {booking.doctorName
-                  .charAt(0)
-                  .toUpperCase()}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-sm border border-line-strong bg-pine-wash font-display font-medium text-pine-deep">
+                {booking.doctorName.charAt(0).toUpperCase()}
               </div>
 
               <div>
-                <p className="font-semibold text-[#172033]">
-                  {booking.doctorName}
-                </p>
+                <p className="font-display text-[16px] text-ink">{booking.doctorName}</p>
+                <p className="text-[13px] text-pine">{booking.specialization}</p>
+              </div>
+            </div>
 
-                <p className="text-sm text-[#176b87]">
-                  {booking.specialization}
+            <div className="mt-5 space-y-4 border-t border-line pt-5">
+              <div>
+                <p className="eyebrow">Date</p>
+                <p className="mt-1 text-sm text-ink">{formatDate(booking.date)}</p>
+              </div>
+
+              <div>
+                <p className="eyebrow">Time</p>
+                <p className="mt-1 font-mono text-sm text-ink">
+                  {formatTime(booking.startTime)} – {formatTime(booking.endTime)}
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 space-y-4 border-t border-[#e4e7ec] pt-5">
-              <div>
-                <p className="text-xs text-[#98a2b3]">
-                  Date
-                </p>
-
-                <p className="mt-1 text-sm text-[#344054]">
-                  {formatDate(booking.date)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-[#98a2b3]">
-                  Time
-                </p>
-
-                <p className="mt-1 text-sm text-[#344054]">
-                  {formatTime(
-                    booking.startTime
-                  )}{" "}
-                  –{" "}
-                  {formatTime(
-                    booking.endTime
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-lg bg-[#f8fafb] p-3">
-              <p className="text-xs leading-5 text-[#687386]">
-                Your slot is temporarily held while
-                you complete this form.
+            <div className="mt-5 rounded-sm bg-paper p-3">
+              <p className="text-xs leading-5 text-ink-soft">
+                Your slot is held while you complete this form.
               </p>
             </div>
           </aside>

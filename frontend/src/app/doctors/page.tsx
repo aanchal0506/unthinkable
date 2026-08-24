@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { UserX } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import DoctorCard from "@/components/doctors/DoctorCard";
 import DoctorSearch from "@/components/doctors/DoctorSearch";
 import Loading from "@/components/ui/Loading";
+import Alert from "@/components/ui/Alert";
 
 import { getDoctors } from "@/lib/api/doctors";
 import type { Doctor } from "@/types/doctor";
@@ -23,15 +25,12 @@ export default function DoctorsPage() {
         setLoading(true);
         setError("");
 
-        const data = await getDoctors(
-          search.trim() || undefined
-        );
+        const data = await getDoctors(search.trim() || undefined);
 
         setDoctors(data);
       } catch (error: any) {
         setError(
-          error?.response?.data?.message ||
-            "Unable to load doctors."
+          error?.response?.data?.message || "Unable to load doctors."
         );
       } finally {
         setLoading(false);
@@ -44,58 +43,39 @@ export default function DoctorsPage() {
   }, [search]);
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-7xl">
+    <AppShell allow={["PATIENT"]}>
+      <div className="mx-auto max-w-6xl">
         <div className="mb-7">
-          <p className="text-sm font-medium text-[#176b87]">
-            Find care
-          </p>
-
-          <h1 className="mt-1 text-2xl font-semibold text-[#172033]">
-            Find a doctor
-          </h1>
-
-          <p className="mt-2 text-sm text-[#687386]">
+          <p className="eyebrow mb-2">Find care</p>
+          <h1 className="font-display text-[28px] text-ink">Find a doctor</h1>
+          <p className="mt-1.5 text-[14.5px] text-ink-soft">
             Search for a doctor by their area of specialisation.
           </p>
         </div>
 
-        <div className="mb-7">
-          <DoctorSearch
-            value={search}
-            onChange={setSearch}
-          />
+        <div className="mb-7 max-w-md">
+          <DoctorSearch value={search} onChange={setSearch} />
         </div>
 
         {loading ? (
           <Loading />
         ) : error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-            {error}
-          </div>
+          <Alert tone="error">{error}</Alert>
         ) : doctors.length === 0 ? (
-          <div className="rounded-xl border border-[#e4e7ec] bg-white p-10 text-center">
-            <p className="font-medium text-[#344054]">
-              No doctors found
-            </p>
-
-            <p className="mt-1 text-sm text-[#98a2b3]">
-              Try a different specialisation.
-            </p>
+          <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-surface/50 p-10 text-center">
+            <UserX className="h-6 w-6 text-ink-faint" strokeWidth={1.5} />
+            <p className="font-display text-[16px] text-ink">No doctors found</p>
+            <p className="text-sm text-ink-soft">Try a different specialisation.</p>
           </div>
         ) : (
           <>
-            <div className="mb-4 text-sm text-[#687386]">
-              {doctors.length} doctor
-              {doctors.length !== 1 ? "s" : ""} available
+            <div className="mb-4 font-mono text-[12.5px] text-ink-faint">
+              {doctors.length} doctor{doctors.length !== 1 ? "s" : ""} available
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {doctors.map((doctor) => (
-                <DoctorCard
-                  key={doctor.id}
-                  doctor={doctor}
-                />
+                <DoctorCard key={doctor.id} doctor={doctor} />
               ))}
             </div>
           </>

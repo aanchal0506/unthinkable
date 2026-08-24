@@ -11,7 +11,6 @@ router.post(
   "/appointments/:appointmentId/symptoms",
   authenticate,
   authorize("PATIENT"),
-  validateBody(submitSymptomsSchema),
   symptomController.submitSymptoms
 );
 

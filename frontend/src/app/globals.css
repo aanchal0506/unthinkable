@@ -1,16 +1,62 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f7f8fa;
-  --foreground: #172033;
-  --primary: #176b87;
-  --primary-dark: #11556b;
-  --muted: #687386;
-  --border: #e4e7ec;
+@theme {
+  --color-paper: #F2F4EF;
+  --color-surface: #FFFFFF;
+
+  --color-ink: #1C2620;
+  --color-ink-soft: #4B5A50;
+  --color-ink-faint: #7E8C81;
+
+  --color-line: #DCE3D6;
+  --color-line-strong: #BFCAB6;
+
+  --color-pine: #2F5D50;
+  --color-pine-deep: #1F4038;
+  --color-pine-wash: #E4EAE3;
+
+  --color-clay: #B5432B;
+  --color-clay-wash: #F4E3DD;
+
+  --color-amber: #C98A2C;
+  --color-amber-wash: #F5E9D4;
+
+  --color-slate: #3C5A76;
+  --color-slate-wash: #E1E8ED;
+
+  --font-display: var(--font-display), Georgia, serif;
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  --tracking-label: 0.08em;
+
+  --shadow-card: 0 1px 2px rgba(28, 38, 32, 0.06);
+  --shadow-raised: 0 4px 16px rgba(28, 38, 32, 0.10);
+
+  --animate-fade-up: fade-up 0.35s ease-out both;
+
+  @keyframes fade-up {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 * {
   box-sizing: border-box;
+  border-color: var(--color-line);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -20,9 +66,23 @@ body {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv11";
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+}
+
+a {
+  color: var(--color-pine);
 }
 
 button,
@@ -34,4 +94,145 @@ select {
 
 button {
   cursor: pointer;
+}
+
+::selection {
+  background: #2f5d5024;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-pine);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Component-level classes (Tailwind v4 CSS-first: plain CSS using theme vars) ---- */
+
+@layer components {
+
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-ink-faint);
+}
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-sm);
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.125rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.stamp-pine {
+  border-color: color-mix(in srgb, var(--color-pine) 40%, transparent);
+  color: var(--color-pine);
+  background: var(--color-pine-wash);
+}
+
+.stamp-clay {
+  border-color: color-mix(in srgb, var(--color-clay) 40%, transparent);
+  color: var(--color-clay);
+  background: var(--color-clay-wash);
+}
+
+.stamp-amber {
+  border-color: color-mix(in srgb, var(--color-amber) 40%, transparent);
+  color: var(--color-amber);
+  background: var(--color-amber-wash);
+}
+
+.stamp-slate {
+  border-color: color-mix(in srgb, var(--color-slate) 40%, transparent);
+  color: var(--color-slate);
+  background: var(--color-slate-wash);
+}
+
+.stamp-neutral {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink-soft);
+  background: var(--color-paper);
+}
+
+/* Signature element: perforated ticket-stub card used for appointments. */
+.ticket {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  isolation: isolate;
+}
+
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.ticket::before {
+  left: -9px;
+}
+
+.ticket::after {
+  right: -9px;
+}
+
+.ticket-tear {
+  border-left: 1px dashed var(--color-line-strong);
+}
+
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ledger th {
+  text-align: left;
+  font-weight: 400;
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.5rem 0.75rem;
+}
+
+.ledger td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.ledger tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.ledger tbody tr:hover {
+  background: color-mix(in srgb, var(--color-pine-wash) 40%, transparent);
+}
 }

@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import Loading from "@/components/ui/Loading";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 
 import { getDoctorById } from "@/lib/api/doctors";
@@ -32,8 +34,7 @@ export default function DoctorDetailsPage() {
         setDoctor(data);
       } catch (error: any) {
         setError(
-          error?.response?.data?.message ||
-            "Unable to load doctor details."
+          error?.response?.data?.message || "Unable to load doctor details."
         );
       } finally {
         setLoading(false);
@@ -44,46 +45,38 @@ export default function DoctorDetailsPage() {
   }, [doctorId]);
 
   return (
-    <AppShell>
+    <AppShell allow={["PATIENT"]}>
       <div className="mx-auto max-w-4xl">
         <Link
           href="/doctors"
-          className="text-sm text-[#687386] hover:text-[#176b87]"
+          className="flex items-center gap-1.5 text-sm text-ink-soft hover:text-pine"
         >
-          ← Back to doctors
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to doctors
         </Link>
 
         {loading ? (
           <Loading />
         ) : error ? (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-            {error}
-          </div>
+          <Alert tone="error" className="mt-6">{error}</Alert>
         ) : !doctor ? (
-          <div className="mt-6 rounded-xl border border-[#e4e7ec] bg-white p-8 text-center">
+          <div className="mt-6 rounded-md border border-line bg-surface p-8 text-center text-ink-soft">
             Doctor not found.
           </div>
         ) : (
-          <div className="mt-6 overflow-hidden rounded-xl border border-[#e4e7ec] bg-white">
-            <div className="border-b border-[#e4e7ec] p-6 sm:p-8">
+          <div className="mt-6 overflow-hidden rounded-md border border-line bg-surface">
+            <div className="border-b border-line p-6 sm:p-8">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#e7f2f5] text-3xl font-semibold text-[#176b87]">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-pine-wash font-display text-3xl font-medium text-pine-deep">
                   {doctor.name?.charAt(0).toUpperCase()}
                 </div>
 
                 <div>
-                  <h1 className="text-2xl font-semibold text-[#172033]">
-                    {doctor.name}
-                  </h1>
-
-                  <p className="mt-1 text-[#176b87]">
-                    {
-                      doctor.specialization ||
-                      "General Medicine"}
-                  </p>
+                  <h1 className="font-display text-[26px] text-ink">{doctor.name}</h1>
+                  <p className="mt-1 text-pine">{doctor.specialization || "General Medicine"}</p>
 
                   {doctor.qualification && (
-                    <p className="mt-2 text-sm text-[#687386]">
+                    <p className="mt-2 font-mono text-[13px] text-ink-soft">
                       {doctor.qualification}
                     </p>
                   )}
@@ -93,35 +86,27 @@ export default function DoctorDetailsPage() {
 
             <div className="grid gap-8 p-6 sm:p-8 md:grid-cols-[1fr_240px]">
               <div>
-                <h2 className="font-semibold text-[#172033]">
-                  About
-                </h2>
+                <p className="eyebrow mb-3">About</p>
 
-                <p className="mt-3 text-sm leading-7 text-[#687386]">
+                <p className="text-sm leading-7 text-ink-soft">
                   {doctor.bio ||
                     "Doctor information and consultation details are available here."}
                 </p>
 
-                <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                  {doctor.experience !== undefined && (
-                    <div className="rounded-lg bg-[#f7f8fa] p-4">
-                      <p className="text-xs text-[#98a2b3]">
-                        Experience
-                      </p>
-
-                      <p className="mt-1 font-medium text-[#344054]">
+                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                  {doctor.experience !== undefined && doctor.experience !== null && (
+                    <div className="rounded-sm border border-line bg-paper p-4">
+                      <p className="eyebrow">Experience</p>
+                      <p className="mt-1 font-mono font-medium text-ink">
                         {doctor.experience} years
                       </p>
                     </div>
                   )}
 
-                  {doctor.consultationFee !== undefined && (
-                    <div className="rounded-lg bg-[#f7f8fa] p-4">
-                      <p className="text-xs text-[#98a2b3]">
-                        Consultation fee
-                      </p>
-
-                      <p className="mt-1 font-medium text-[#344054]">
+                  {doctor.consultationFee !== undefined && doctor.consultationFee !== null && (
+                    <div className="rounded-sm border border-line bg-paper p-4">
+                      <p className="eyebrow">Consultation fee</p>
+                      <p className="mt-1 font-mono font-medium text-ink">
                         ₹{doctor.consultationFee}
                       </p>
                     </div>
@@ -129,22 +114,15 @@ export default function DoctorDetailsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#e4e7ec] p-5">
-                <p className="text-sm font-medium text-[#172033]">
-                  Ready to book?
-                </p>
+              <div className="h-fit rounded-md border border-line p-5">
+                <p className="font-display text-[16px] text-ink">Ready to book?</p>
 
-                <p className="mt-2 text-sm leading-6 text-[#687386]">
+                <p className="mt-2 text-sm leading-6 text-ink-soft">
                   Choose an available date and appointment slot.
                 </p>
 
-                <Link
-                  href={`/book/${doctor.id}`}
-                  className="mt-5 block"
-                >
-                  <Button className="w-full">
-                    Book appointment
-                  </Button>
+                <Link href={`/book/${doctor.id}`} className="mt-5 block">
+                  <Button className="w-full">Book appointment</Button>
                 </Link>
               </div>
             </div>

@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 import { loginUser, saveAuthData } from "@/lib/api/auth";
 import { redirectByRole } from "@/lib/auth";
 
@@ -46,34 +47,31 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa]">
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
-        <div className="grid w-full overflow-hidden rounded-2xl border border-[#e4e7ec] bg-white shadow-sm md:grid-cols-2">
+    <main className="min-h-screen bg-paper">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-10">
+        <div className="grid w-full overflow-hidden rounded-md border border-line bg-surface shadow-card md:grid-cols-2">
           {/* Left */}
-          <div className="hidden bg-[#176b87] p-12 text-white md:flex md:flex-col md:justify-between">
+          <div className="hidden bg-pine-deep p-12 text-white md:flex md:flex-col md:justify-between">
             <div>
-              <div className="mb-10 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 font-semibold">
+              <div className="mb-10 flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/30 font-display text-sm">
                   C
-                </div>
-
-                <span className="text-lg font-semibold">
-                  CarePoint
                 </span>
+                <span className="font-display text-lg">CarePoint</span>
               </div>
 
-              <h1 className="max-w-md text-4xl font-semibold leading-tight">
+              <h1 className="max-w-md font-display text-[32px] leading-tight">
                 Healthcare appointments, without the hassle.
               </h1>
 
-              <p className="mt-5 max-w-md text-sm leading-6 text-white/80">
-                Book appointments, share symptoms before your visit,
-                and keep track of your follow-up care in one place.
+              <p className="mt-5 max-w-md text-sm leading-6 text-white/75">
+                Book appointments, share symptoms before your visit, and
+                keep track of your follow-up care in one place.
               </p>
             </div>
 
-            <p className="text-sm text-white/60">
-              Healthcare Appointment & Follow-up Manager
+            <p className="font-mono text-[11px] uppercase tracking-label text-white/50">
+              Healthcare Appointment &amp; Follow-up Manager
             </p>
           </div>
 
@@ -81,17 +79,9 @@ export default function LoginPage() {
           <div className="p-7 sm:p-10 md:p-12">
             <div className="mx-auto max-w-md">
               <div className="mb-8">
-                <p className="text-sm font-medium text-[#176b87]">
-                  Welcome back
-                </p>
-
-                <h2 className="mt-2 text-2xl font-semibold text-[#172033]">
-                  Sign in to your account
-                </h2>
-
-                <p className="mt-2 text-sm text-[#687386]">
-                  Enter your details to continue.
-                </p>
+                <p className="eyebrow mb-2">Welcome back</p>
+                <h2 className="font-display text-2xl text-ink">Sign in to your account</h2>
+                <p className="mt-2 text-sm text-ink-soft">Enter your details to continue.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -113,27 +103,16 @@ export default function LoginPage() {
                   required
                 />
 
-                {error && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
+                {error && <Alert tone="error">{error}</Alert>}
 
-                <Button
-                  type="submit"
-                  loading={loading}
-                  className="w-full"
-                >
+                <Button type="submit" loading={loading} className="w-full">
                   Sign in
                 </Button>
               </form>
 
-              <p className="mt-7 text-center text-sm text-[#687386]">
+              <p className="mt-7 text-center text-sm text-ink-soft">
                 Don't have an account?{" "}
-                <Link
-                  href="/register"
-                  className="font-medium text-[#176b87] hover:underline"
-                >
+                <Link href="/register" className="font-medium text-pine hover:underline">
                   Create one
                 </Link>
               </p>

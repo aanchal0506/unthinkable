@@ -1,4 +1,5 @@
 import apiClient from "./client";
+
 import type {
   Appointment,
   AppointmentResponse,
@@ -46,18 +47,41 @@ export const getMyAppointments = async (): Promise<
   return response.data.appointments;
 };
 
+export const getPatientAppointmentDetails =
+  async (
+    appointmentId: number
+  ) => {
+    const response = await apiClient.get(
+      `/appointments/patient/appointments/${appointmentId}`
+    );
+
+    return response.data.appointment;
+  };
+
+export const getAppointmentSymptoms =
+  async (
+    appointmentId: number
+  ) => {
+    const response = await apiClient.get(
+      `/appointments/${appointmentId}/symptoms`
+    );
+
+    return response.data;
+  };
+
 export const cancelAppointment = async (
   appointmentId: number,
   reason?: string
 ) => {
-  const response = await apiClient.delete(
-    `/appointments/${appointmentId}`,
-    {
-      data: {
-        reason,
-      },
-    }
-  );
+  const response =
+    await apiClient.delete(
+      `/appointments/${appointmentId}`,
+      {
+        data: {
+          reason,
+        },
+      }
+    );
 
   return response.data;
 };

@@ -1,63 +1,31 @@
-import apiClient from "./client";
-import type {
-  Appointment,
-  AppointmentResponse,
-} from "@/types/appointment";
+export interface Appointment {
+  id: number;
+  doctorId: number;
+  patientId: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: "BOOKED" | "COMPLETED" | "CANCELLED";
+}
 
-export const bookAppointment = async (
-  doctorId: number,
-  date: string,
-  startTime: string
-): Promise<Appointment> => {
-  const response =
-    await apiClient.post<AppointmentResponse>(
-      "/appointments",
-      {
-        doctorId,
-        date,
-        startTime,
-      }
-    );
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
+}
 
-  return response.data.appointment;
-};
+export interface SlotsResponse {
+  doctorId: number;
+  date: string;
+  slots: TimeSlot[];
+}
 
-export const submitSymptoms = async (
-  appointmentId: number,
-  symptoms: string
-) => {
-  const response = await apiClient.post(
-    `/appointments/${appointmentId}/symptoms`,
-    {
-      symptoms,
-    }
-  );
+export interface AppointmentResponse {
+  message: string;
+  appointment: Appointment;
+}
 
-  return response.data;
-};
-
-export const getMyAppointments = async (): Promise<
-  Appointment[]
-> => {
-  const response = await apiClient.get(
-    "/appointments/my"
-  );
-
-  return response.data.appointments;
-};
-
-export const cancelAppointment = async (
-  appointmentId: number,
-  reason?: string
-) => {
-  const response = await apiClient.delete(
-    `/appointments/${appointmentId}`,
-    {
-      data: {
-        reason,
-      },
-    }
-  );
-
-  return response.data;
-};
+export interface HoldResponse {
+  message: string;
+  holdId: number;
+  expiresAt: string;
+}

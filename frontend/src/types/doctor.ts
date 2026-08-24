@@ -3,18 +3,32 @@ export interface Doctor {
   userId?: number;
   name: string;
   email?: string;
-  specialisation: string;
-  specialization?: string;
-  qualification?: string;
-  experience?: number;
-  bio?: string;
-  consultationFee?: number;
+  specialization: string;
+  qualification?: string | null;
+  experience?: number | null;
+  bio?: string | null;
+  consultationFee?: number | null;
 }
 
 export interface DoctorResponse {
-  doctors: Doctor[];
+  doctors: BackendDoctor[];
+}
+
+export interface BackendDoctor {
+  id: number;
+  specialization: string;
+  qualification?: string | null;
+  experience?: number | null;
+  bio?: string | null;
+  consultationFee?: number | null;
+  user: {
+    id: number;
+    name: string;
+    email?: string;
+    role?: string;
+  };
 }
 
 export interface DoctorDetailResponse {
-  doctor: Doctor;
+  doctor: BackendDoctor;
 }

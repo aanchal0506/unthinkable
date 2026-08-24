@@ -3,9 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 import { registerUser } from "@/lib/api/auth";
 
 export default function RegisterPage() {
@@ -21,19 +23,14 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const updateField = (
-    field: keyof typeof form,
-    value: string
-  ) => {
+  const updateField = (field: keyof typeof form, value: string) => {
     setForm((current) => ({
       ...current,
       [field]: value,
     }));
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError("");
@@ -43,8 +40,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -61,31 +58,31 @@ export default function RegisterPage() {
       router.push("/login");
     } catch (error: any) {
       setError(
-        error?.response?.data?.message ||
-          "Unable to create your account."
+        error?.response?.data?.message || "Unable to create your account."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const perks = [
+    "Find doctors by specialisation",
+    "Book available appointment slots",
+    "Share symptoms before your visit",
+    "Access your follow-up information",
+  ];
+
   return (
-    <main className="min-h-screen bg-[#f7f8fa]">
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
-        <div className="grid w-full overflow-hidden rounded-2xl border border-[#e4e7ec] bg-white shadow-sm md:grid-cols-2">
+    <main className="min-h-screen bg-paper">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-10">
+        <div className="grid w-full overflow-hidden rounded-md border border-line bg-surface shadow-card md:grid-cols-2">
           {/* Form */}
           <div className="order-2 p-7 sm:p-10 md:order-1 md:p-12">
             <div className="mx-auto max-w-md">
               <div className="mb-8">
-                <p className="text-sm font-medium text-[#176b87]">
-                  Get started
-                </p>
-
-                <h1 className="mt-2 text-2xl font-semibold text-[#172033]">
-                  Create your account
-                </h1>
-
-                <p className="mt-2 text-sm text-[#687386]">
+                <p className="eyebrow mb-2">Get started</p>
+                <h1 className="font-display text-2xl text-ink">Create your account</h1>
+                <p className="mt-2 text-sm text-ink-soft">
                   Create a patient account to manage your appointments.
                 </p>
               </div>
@@ -96,9 +93,7 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="Your name"
                   value={form.name}
-                  onChange={(event) =>
-                    updateField("name", event.target.value)
-                  }
+                  onChange={(event) => updateField("name", event.target.value)}
                   required
                 />
 
@@ -107,9 +102,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="you@example.com"
                   value={form.email}
-                  onChange={(event) =>
-                    updateField("email", event.target.value)
-                  }
+                  onChange={(event) => updateField("email", event.target.value)}
                   required
                 />
 
@@ -118,9 +111,7 @@ export default function RegisterPage() {
                   type="password"
                   placeholder="Create a password"
                   value={form.password}
-                  onChange={(event) =>
-                    updateField("password", event.target.value)
-                  }
+                  onChange={(event) => updateField("password", event.target.value)}
                   required
                 />
 
@@ -129,36 +120,20 @@ export default function RegisterPage() {
                   type="password"
                   placeholder="Enter your password again"
                   value={form.confirmPassword}
-                  onChange={(event) =>
-                    updateField(
-                      "confirmPassword",
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => updateField("confirmPassword", event.target.value)}
                   required
                 />
 
-                {error && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
+                {error && <Alert tone="error">{error}</Alert>}
 
-                <Button
-                  type="submit"
-                  loading={loading}
-                  className="w-full"
-                >
+                <Button type="submit" loading={loading} className="w-full">
                   Create account
                 </Button>
               </form>
 
-              <p className="mt-7 text-center text-sm text-[#687386]">
+              <p className="mt-7 text-center text-sm text-ink-soft">
                 Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-medium text-[#176b87] hover:underline"
-                >
+                <Link href="/login" className="font-medium text-pine hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -166,33 +141,32 @@ export default function RegisterPage() {
           </div>
 
           {/* Right */}
-          <div className="order-1 hidden bg-[#176b87] p-12 text-white md:order-2 md:flex md:flex-col md:justify-between">
+          <div className="order-1 hidden bg-pine-deep p-12 text-white md:order-2 md:flex md:flex-col md:justify-between">
             <div>
-              <div className="mb-10 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 font-semibold">
+              <div className="mb-10 flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/30 font-display text-sm">
                   C
-                </div>
-
-                <span className="text-lg font-semibold">
-                  CarePoint
                 </span>
+                <span className="font-display text-lg">CarePoint</span>
               </div>
 
-              <h2 className="max-w-md text-4xl font-semibold leading-tight">
+              <h2 className="max-w-md font-display text-[30px] leading-tight">
                 Stay on top of your care.
               </h2>
 
-              <p className="mt-5 max-w-md text-sm leading-6 text-white/80">
-                Keep appointments, symptoms, prescriptions and
-                follow-up information together.
+              <p className="mt-5 max-w-md text-sm leading-6 text-white/75">
+                Keep appointments, symptoms, prescriptions and follow-up
+                information together.
               </p>
             </div>
 
-            <div className="space-y-3 text-sm text-white/75">
-              <p>✓ Find doctors by specialisation</p>
-              <p>✓ Book available appointment slots</p>
-              <p>✓ Share symptoms before your visit</p>
-              <p>✓ Access your follow-up information</p>
+            <div className="space-y-3 text-sm text-white/80">
+              {perks.map((perk) => (
+                <p key={perk} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  {perk}
+                </p>
+              ))}
             </div>
           </div>
         </div>

@@ -5,19 +5,22 @@ import { ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import type { UserRole } from "@/types/auth";
 
 interface AppShellProps {
   children: ReactNode;
+  allow?: UserRole[];
 }
 
 export default function AppShell({
   children,
+  allow,
 }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen bg-[#f7f8fa]">
+    <ProtectedRoute allow={allow}>
+      <div className="flex min-h-screen bg-paper">
         <Sidebar
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
