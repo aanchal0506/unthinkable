@@ -1,34 +1,107 @@
-**Healthcare Appointment & Follow-up Manager**
+# 🏥 Healthcare Appointment & Follow-up Manager
 
 A full-stack healthcare appointment management system designed to handle the complete appointment flow, from booking a consultation to post-visit follow-up.
 
-The platform has separate portals for patients, doctors, and administrators. Patients can search for doctors, book appointments, provide their symptoms before a consultation, and view their follow-up information. Doctors can manage their appointments, view patient symptoms and AI-generated summaries, and add consultation notes and prescriptions. Administrators manage doctor profiles, working hours, and leave.
+The platform provides separate portals for **patients, doctors, and administrators**.
 
-**Tech Stack**
+* **Patients** can search for doctors, book appointments, provide symptoms before a consultation, and view follow-up information.
+* **Doctors** can manage appointments, view patient symptoms and AI-generated summaries, and add consultation notes and prescriptions.
+* **Administrators** can manage doctor profiles, working hours, and leave.
 
-Frontend
-React.js — Used to build the user interface and the separate patient, doctor, and admin portals.
-Vite — Used as the frontend build tool and development server for a lightweight and fast React setup.
-React Router — Used for navigation and protected routes based on user roles.
-Tailwind CSS — Used for styling the application and building the dashboards and forms.
-Axios — Used to communicate with the Express backend through REST APIs.
-React Hook Form — Used to manage forms such as registration, appointment booking, symptom submission, and prescriptions.
-date-fns — Used for handling appointment dates, working hours, and slot-related date calculations.
+---
 
-Backend
-Node.js — Used as the runtime environment for the backend.
-Express.js — Used to build the REST API and handle requests from the frontend.
-JWT (JSON Web Tokens) — Used for authentication and role-based authorization.
-bcrypt — Used to securely hash user passwords before storing them.
-cookie-parser — Used to handle authentication cookies.
-CORS — Used to allow communication between the frontend and backend.
+## 🛠️ Tech Stack
 
-Database
-PostgreSQL — Used as the primary database because the application contains several related entities such as users, doctors, appointments, working hours, leave days, prescriptions, and notifications. PostgreSQL also provides transactions and constraints that are useful for preventing issues such as double-booking.
-Prisma — Used as the ORM for PostgreSQL. It provides database migrations, schema management, relationships, and a simpler way to interact with the database from the Node.js backend.
+### 🎨 Frontend
 
-External Services
-LLM API — Used to generate pre-visit symptom summaries for doctors and patient-friendly summaries after consultations. LLM processing is handled by the backend so that failures do not affect the core appointment system.
-Nodemailer — Used to send appointment confirmations, reminders, cancellation notifications, and other email notifications.
-Google Calendar API — Used to create, update, and delete calendar events for appointments.
-Google OAuth 2.0 — Used to securely connect users' Google Calendar accounts.
+| Technology          | Usage                                                                       |
+| ------------------- | --------------------------------------------------------------------------- |
+| **React.js**        | Builds the user interface and separate patient, doctor, and admin portals   |
+| **Vite**            | Frontend build tool and development server                                  |
+| **React Router**    | Navigation and protected routes based on user roles                         |
+| **Tailwind CSS**    | Styling dashboards, forms, and application components                       |
+| **Axios**           | Communicating with the Express backend through REST APIs                    |
+| **React Hook Form** | Managing registration, appointment booking, symptom, and prescription forms |
+| **date-fns**        | Handling appointment dates, working hours, and slot-related calculations    |
+
+### ⚙️ Backend
+
+| Technology        | Usage                                             |
+| ----------------- | ------------------------------------------------- |
+| **Node.js**       | Runtime environment for the backend               |
+| **Express.js**    | Building REST APIs and handling frontend requests |
+| **JWT**           | Authentication and role-based authorization       |
+| **bcrypt**        | Secure password hashing                           |
+| **cookie-parser** | Handling authentication cookies                   |
+| **CORS**          | Allowing secure frontend-backend communication    |
+
+### 🗄️ Database
+
+| Technology     | Usage                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| **PostgreSQL** | Primary database for users, doctors, appointments, working hours, leave days, prescriptions, and notifications |
+| **Prisma**     | ORM used for database schema management, migrations, relationships, and queries                                |
+
+PostgreSQL transactions and constraints help maintain data consistency and handle scenarios such as **appointment slot conflicts and double-booking prevention**.
+
+### 🔗 External Services
+
+| Service                 | Usage                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| **LLM API**             | Generates pre-visit symptom summaries and patient-friendly post-visit summaries    |
+| **Nodemailer**          | Sends appointment confirmations, reminders, cancellations, and other notifications |
+| **Google Calendar API** | Creates, updates, and deletes appointment calendar events                          |
+| **Google OAuth 2.0**    | Securely connects user accounts with Google Calendar                               |
+
+LLM processing is handled through the backend so that failures in AI services do not interrupt the core appointment workflow.
+
+---
+
+## ⚙️ How to Run Locally
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/aanchal0506/unthinkable.git
+cd unthinkable
+```
+
+### 2. Run the Backend
+
+Open a terminal:
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+### 3. Run the Frontend
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Once both servers are running, open the frontend URL displayed in the terminal.
+
+---
+
+## 🚀 Deployment
+
+The application is deployed using **Render**.
+
+🔗 **Live Application:**
+
+Sensitive credentials and third-party service configuration are securely managed through the deployment platform and are not included in the repository.
+
+---
+
+## 👩‍💻 Author
+
+**Aanchal Ladha**
+
+[GitHub Repository](https://github.com/aanchal0506/unthinkable)
