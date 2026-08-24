@@ -1,4 +1,4 @@
-import prisma from "../config/prisma";
+import prisma from "../config/prisma.js";
 
 const HOLD_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 

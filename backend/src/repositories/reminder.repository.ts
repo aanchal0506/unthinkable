@@ -1,4 +1,4 @@
-import prisma from "../config/prisma";
+import prisma from "../config/prisma.js";
 
 const createReminder = async (data: {
   prescriptionId: number;

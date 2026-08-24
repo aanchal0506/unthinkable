@@ -1,5 +1,5 @@
-import prisma from "../config/prisma";
-import type { NotificationType } from "../generated/prisma/client";
+import prisma from "../config/prisma.js";
+import type { NotificationType } from "../generated/prisma/client.js";
 
 const createLog = async (data: {
   type: NotificationType;

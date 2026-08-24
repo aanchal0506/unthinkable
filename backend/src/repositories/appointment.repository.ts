@@ -1,5 +1,5 @@
-import prisma from "../config/prisma";
-import { Prisma } from "../generated/prisma/client";
+import prisma from "../config/prisma.js";
+import { Prisma } from "../generated/prisma/client.js";
 
 const createAppointment = async (data: {
   patientId: number;
