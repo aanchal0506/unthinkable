@@ -14,7 +14,7 @@ router.get(
 
 // Place / release a short-lived hold on a slot while the patient completes
 // the booking flow (symptom form, review, confirm).
-router.post("/hold", authenticate, validateBody(holdSlotSchema), slotController.holdSlot);
-router.post("/release", authenticate, validateBody(holdSlotSchema), slotController.releaseSlotHold);
+router.post("/hold", authenticate,  slotController.holdSlot);
+router.post("/release", authenticate, slotController.releaseSlotHold);
 
 export default router;

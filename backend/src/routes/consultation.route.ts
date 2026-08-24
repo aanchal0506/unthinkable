@@ -11,7 +11,6 @@ router.post(
   "/appointments/:appointmentId/consultation",
   authenticate,
   authorize("DOCTOR"),
-  validateBody(createConsultationSchema),
   consultationController.createConsultation
 );
 

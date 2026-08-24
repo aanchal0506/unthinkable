@@ -14,7 +14,6 @@ router.post(
   "/",
   authenticate,
   authorize("DOCTOR"),
-  validateBody(createLeaveSchema),
   leaveController.createLeave
 );
 

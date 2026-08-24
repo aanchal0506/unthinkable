@@ -31,6 +31,19 @@ const getUserById = async (id: number) => {
   return await prisma.user.findUnique({ where: { id } });
 };
 
+const getPublicProfileById = async (id: number) => {
+  return await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      googleCalendarLinked: true,
+    },
+  });
+};
+
 const updateGoogleTokens = async (
   userId: number,
   data: {
@@ -51,5 +64,6 @@ export {
   createUser,
   getPatientProfileByUserId,
   getUserById,
+  getPublicProfileById,
   updateGoogleTokens,
 };

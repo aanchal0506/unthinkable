@@ -18,7 +18,6 @@ router.post(
     "/",
     authenticate,
     authorize("ADMIN"),
-    validateBody(createDoctorSchema),
     doctorController.createDoctor
 );
 
