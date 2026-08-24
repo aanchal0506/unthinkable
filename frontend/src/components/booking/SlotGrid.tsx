@@ -1,5 +1,7 @@
 "use client";
 
+import { CalendarX } from "lucide-react";
+
 import type { TimeSlot } from "@/types/appointment";
 
 interface SlotGridProps {
@@ -29,24 +31,20 @@ export default function SlotGrid({
 }: SlotGridProps) {
   if (slots.length === 0) {
     return (
-      <div className="rounded-lg border border-[#e4e7ec] bg-white p-8 text-center">
-        <p className="font-medium text-[#344054]">
-          No available slots
-        </p>
-
-        <p className="mt-1 text-sm text-[#98a2b3]">
-          This doctor doesn't have any available
-          appointments on this date.
+      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-surface/50 p-8 text-center">
+        <CalendarX className="h-6 w-6 text-ink-faint" strokeWidth={1.5} />
+        <p className="font-display text-[15px] text-ink">No available slots</p>
+        <p className="text-sm text-ink-soft">
+          This doctor doesn't have any openings on this date.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
       {slots.map((slot) => {
-        const selected =
-          selectedSlot?.startTime === slot.startTime;
+        const selected = selectedSlot?.startTime === slot.startTime;
 
         return (
           <button
@@ -54,12 +52,11 @@ export default function SlotGrid({
             type="button"
             onClick={() => onSelect(slot)}
             className={`
-              rounded-lg border px-4 py-3 text-sm
-              font-medium transition
+              rounded-sm border px-4 py-2.5 font-mono text-[13.5px] transition-colors
               ${
                 selected
-                  ? "border-[#176b87] bg-[#edf6f8] text-[#176b87]"
-                  : "border-[#e4e7ec] bg-white text-[#344054] hover:border-[#b8d5dc] hover:bg-[#f9fbfc]"
+                  ? "border-pine bg-pine-wash text-pine-deep"
+                  : "border-line bg-surface text-ink-soft hover:border-line-strong hover:bg-paper"
               }
             `}
           >

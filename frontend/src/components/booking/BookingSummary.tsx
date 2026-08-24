@@ -40,54 +40,38 @@ export default function BookingSummary({
   onConfirm,
 }: BookingSummaryProps) {
   return (
-    <div className="rounded-xl border border-[#e4e7ec] bg-white p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#98a2b3]">
-        Appointment summary
-      </p>
+    <div className="rounded-md border border-line bg-surface p-5">
+      <p className="eyebrow">Appointment summary</p>
 
-      <div className="mt-5 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e7f2f5] font-semibold text-[#176b87]">
+      <div className="mt-4 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-sm border border-line-strong bg-pine-wash font-display font-medium text-pine-deep">
           {doctor.name.charAt(0).toUpperCase()}
         </div>
 
         <div>
-          <p className="font-semibold text-[#172033]">
-            {doctor.name}
-          </p>
+          <p className="font-display text-[16px] text-ink">{doctor.name}</p>
+          <p className="text-[13px] text-pine">{doctor.specialization}</p>
+        </div>
+      </div>
 
-          <p className="text-sm text-[#176b87]">
-            {doctor.specialization}
+      <div className="mt-5 space-y-3 border-t border-line pt-5">
+        <div>
+          <p className="eyebrow">Date</p>
+          <p className="mt-1 text-sm text-ink">{formatDate(date)}</p>
+        </div>
+
+        <div>
+          <p className="eyebrow">Time</p>
+          <p className="mt-1 font-mono text-sm text-ink">
+            {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 space-y-3 border-t border-[#e4e7ec] pt-5">
-        <div>
-          <p className="text-xs text-[#98a2b3]">
-            Date
-          </p>
-
-          <p className="mt-1 text-sm text-[#344054]">
-            {formatDate(date)}
-          </p>
-        </div>
-
-        <div>
-          <p className="text-xs text-[#98a2b3]">
-            Time
-          </p>
-
-          <p className="mt-1 text-sm text-[#344054]">
-            {formatTime(slot.startTime)} –{" "}
-            {formatTime(slot.endTime)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-lg bg-[#f8fafb] p-3">
-        <p className="text-xs leading-5 text-[#687386]">
-          Your selected slot will be temporarily held while
-          you complete the booking.
+      <div className="mt-5 rounded-sm bg-paper p-3">
+        <p className="text-xs leading-5 text-ink-soft">
+          This slot is held for you while you complete the booking. If you
+          don't finish within a few minutes, it may be released.
         </p>
       </div>
 
@@ -95,9 +79,9 @@ export default function BookingSummary({
         type="button"
         onClick={onConfirm}
         disabled={loading}
-        className="mt-5 w-full rounded-lg bg-[#176b87] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#11556b] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-5 w-full rounded-sm bg-pine px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-pine-deep disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Securing appointment..." : "Continue"}
+        {loading ? "Securing appointment…" : "Continue"}
       </button>
     </div>
   );

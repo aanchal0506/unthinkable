@@ -16,13 +16,8 @@ const getNextDays = () => {
     date.setDate(today.getDate() + i);
 
     const year = date.getFullYear();
-    const month = String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
-    const day = String(date.getDate()).padStart(
-      2,
-      "0"
-    );
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
     dates.push(`${year}-${month}-${day}`);
   }
@@ -65,26 +60,19 @@ export default function DatePicker({
               type="button"
               onClick={() => onChange(date)}
               className={`
-                w-[76px] rounded-lg border px-3 py-3 text-center
-                transition
+                w-[74px] rounded-sm border px-3 py-3 text-center transition-colors
                 ${
                   selected
-                    ? "border-[#176b87] bg-[#176b87] text-white"
-                    : "border-[#e4e7ec] bg-white text-[#344054] hover:border-[#b8d5dc]"
+                    ? "border-pine bg-pine text-white"
+                    : "border-line bg-surface text-ink-soft hover:border-line-strong hover:text-ink"
                 }
               `}
             >
-              <p
-                className={`text-xs ${
-                  selected
-                    ? "text-white/80"
-                    : "text-[#98a2b3]"
-                }`}
-              >
+              <p className={`eyebrow ${selected ? "text-white/75" : ""}`}>
                 {formatDay(date)}
               </p>
 
-              <p className="mt-1 text-sm font-medium">
+              <p className="mt-1 font-display text-[15px]">
                 {formatDate(date)}
               </p>
             </button>
