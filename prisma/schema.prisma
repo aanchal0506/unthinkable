@@ -1,0 +1,287 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PATIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Google Calendar OAuth (tokens stored encrypted at rest, see utils/crypto.util.ts)
+  googleRefreshToken    String?
+  googleAccessToken     String?
+  googleTokenExpiry     DateTime?
+  googleCalendarLinked  Boolean   @default(false)
+
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+model DoctorProfile {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  specialization  String
+  qualification   String?
+  experience      Int?
+  bio             String?
+  consultationFee Float?
+
+  user User @relation(fields: [userId], references: [id])
+
+  availabilities DoctorAvailability[]
+  leaves         DoctorLeave[]
+  appointments   Appointment[]        @relation("DoctorAppointments")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PatientProfile {
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  user User @relation(fields: [userId], references: [id])
+
+  appointments Appointment[] @relation("PatientAppointments")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DoctorAvailability {
+  id           Int    @id @default(autoincrement())
+  doctorId     Int
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  slotDuration Int
+
+  doctor DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, dayOfWeek])
+}
+
+model DoctorLeave {
+  id       Int      @id @default(autoincrement())
+  doctorId Int
+  date     DateTime
+  reason   String?
+
+  doctor DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, date])
+}
+
+model Appointment {
+  id Int @id @default(autoincrement())
+
+  patientId Int
+  doctorId  Int
+
+  date      DateTime
+  startTime String
+  endTime   String
+
+  status AppointmentStatus @default(BOOKED)
+
+  // Google Calendar event ids created on the patient's / doctor's own calendars.
+  // Either may be null if that side hasn't linked Google Calendar.
+  googlePatientEventId String?
+  googleDoctorEventId  String?
+
+  cancelledBy    Role?
+  cancelReason   String?
+  reminderSentAt DateTime?
+
+  patient PatientProfile @relation("PatientAppointments", fields: [patientId], references: [id])
+
+  doctor DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  symptomSubmission SymptomSubmission?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consultation Consultation?
+
+  @@unique([doctorId, date, startTime])
+  @@index([doctorId, date])
+  @@index([patientId, date])
+}
+
+// Short-lived hold placed on a slot while a patient completes the booking
+// flow (symptom form, review, confirm). This lets the UI say "this slot is
+// held for the next 5 minutes" and stops two patients from racing to book
+// the same slot; the Appointment's own unique constraint is still the final
+// source of truth if two requests land at the exact same instant.
+model SlotHold {
+  id        Int      @id @default(autoincrement())
+  doctorId  Int
+  date      DateTime
+  startTime String
+  patientId Int
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, date, startTime])
+  @@index([expiresAt])
+}
+
+// Durable log of every outbound notification (email today, could grow to
+// SMS/push later) so that failures can be retried by a background job
+// instead of silently disappearing.
+model NotificationLog {
+  id            Int                @id @default(autoincrement())
+  type          NotificationType
+  recipient     String
+  subject       String
+  payload       Json
+  status        NotificationStatus @default(PENDING)
+  attempts      Int                @default(0)
+  lastError     String?
+  appointmentId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([appointmentId])
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION_PATIENT
+  BOOKING_CONFIRMATION_DOCTOR
+  APPOINTMENT_CANCELLATION
+  APPOINTMENT_REMINDER
+  LEAVE_CONFLICT
+  MEDICATION_REMINDER
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model SymptomSubmission {
+  id            Int @id @default(autoincrement())
+  appointmentId Int @unique
+
+  symptoms           String
+  aiSummary          String?
+  urgency            UrgencyLevel?
+  chiefComplaint     String?
+  suggestedQuestions Json?
+  aiStatus           AIStatus      @default(PENDING)
+  aiError            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([appointmentId])
+}
+
+model Consultation {
+  id            Int @id @default(autoincrement())
+  appointmentId Int @unique
+
+  clinicalNotes        String
+  diagnosis            String?
+  followUpInstructions String?
+
+  // LLM-generated patient-friendly rewrite of the notes above
+  patientSummary String?
+  aiStatus       AIStatus @default(PENDING)
+  aiError        String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  prescriptions Prescription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appointmentId])
+}
+
+model Prescription {
+  id             Int @id @default(autoincrement())
+  consultationId Int
+
+  medication   String
+  dosage       String
+  frequency    String
+  duration     String?
+  instructions String?
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+
+  reminders MedicationReminder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([consultationId])
+}
+
+model MedicationReminder {
+  id             Int @id @default(autoincrement())
+  prescriptionId Int
+
+  scheduledAt DateTime
+  status      ReminderStatus @default(PENDING)
+  sentAt      DateTime?
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scheduledAt, status])
+  @@index([prescriptionId])
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+  COMPLETED
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AIStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
