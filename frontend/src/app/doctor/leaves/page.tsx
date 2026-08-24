@@ -1,150 +1,193 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ClipboardList, CalendarOff, ArrowRight, Sunrise } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { CalendarOff, Trash2 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import Loading from "@/components/ui/Loading";
 import Alert from "@/components/ui/Alert";
-import AppointmentCard from "@/components/appointments/AppointmentCard";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
-import { getMyDoctorAppointments } from "@/lib/api/appointments";
-import { getStoredUser } from "@/lib/auth";
+import { createLeave, getMyLeaves, deleteLeave } from "@/lib/api/leaves";
+import type { DoctorLeave } from "@/types/leave";
 
-const todayISO = () => {
+const formatDate = (date: string) =>
+  new Intl.DateTimeFormat("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${String(date).slice(0, 10)}T00:00:00`));
+
+const todayValue = () => {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
 };
 
-export default function DoctorDashboardPage() {
-  const user = getStoredUser();
-
-  const [appointments, setAppointments] = useState<any[]>([]);
+export default function DoctorLeavesPage() {
+  const [leaves, setLeaves] = useState<DoctorLeave[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [date, setDate] = useState("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getMyLeaves();
+
+      setLeaves(
+        [...data].sort((a, b) => a.date.localeCompare(b.date))
+      );
+    } catch (error: any) {
+      setError(error?.response?.data?.message || "Unable to load your leave dates.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const data = await getMyDoctorAppointments();
-
-        setAppointments(data);
-      } catch (error: any) {
-        setError(
-          error?.response?.data?.message || "Unable to load your appointments."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     load();
   }, []);
 
-  const today = todayISO();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
 
-  const todaysAppointments = useMemo(() => {
-    return appointments
-      .filter(
-        (appointment) =>
-          String(appointment.date).slice(0, 10) === today &&
-          appointment.status === "BOOKED"
-      )
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [appointments, today]);
+    setFormError("");
+    setNotice("");
 
-  const upcomingCount = useMemo(
-    () =>
-      appointments.filter(
-        (a) => a.status === "BOOKED" && String(a.date).slice(0, 10) >= today
-      ).length,
-    [appointments, today]
-  );
+    if (!date) {
+      setFormError("Please choose a date.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const result = await createLeave(date, reason.trim() || undefined);
+
+      setDate("");
+      setReason("");
+
+      if (result.affectedAppointments > 0) {
+        setNotice(
+          `Leave added. ${result.affectedAppointments} existing appointment${
+            result.affectedAppointments === 1 ? " was" : "s were"
+          } cancelled, and the affected patient${
+            result.affectedAppointments === 1 ? "" : "s"
+          } notified by email.`
+        );
+      }
+
+      await load();
+    } catch (error: any) {
+      setFormError(error?.response?.data?.message || "Unable to add this leave date.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm("Remove this leave date?");
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(id);
+      await deleteLeave(id);
+      setLeaves((current) => current.filter((leave) => leave.id !== id));
+    } catch (error: any) {
+      window.alert(error?.response?.data?.message || "Unable to remove this leave date.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <AppShell allow={["DOCTOR"]}>
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8">
-          <p className="eyebrow mb-2">Doctor portal</p>
-          <h1 className="font-display text-[28px] text-ink">
-            Welcome back, Dr. {user?.name?.split(" ")[0] || ""}
-          </h1>
-          <p className="mt-1.5 text-[14.5px] text-ink-soft">
-            Here's a look at your schedule.
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl">
+        <p className="eyebrow mb-2">Availability</p>
+        <h1 className="font-display text-[28px] text-ink">Leave</h1>
+        <p className="mt-1.5 max-w-xl text-[14.5px] text-ink-soft">
+          Mark dates you're unavailable. If patients already have
+          appointments booked on that date, they'll be cancelled and
+          notified automatically.
+        </p>
 
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-md border border-line bg-surface p-5">
-            <p className="eyebrow">Today</p>
-            <p className="mt-2 font-display text-3xl text-ink">
-              {todaysAppointments.length}
-            </p>
-            <p className="mt-1 text-[13px] text-ink-soft">appointments scheduled</p>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-7 rounded-md border border-line bg-surface p-6"
+        >
+          <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
+            <Input
+              label="Date"
+              type="date"
+              min={todayValue()}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+
+            <Input
+              label="Reason (optional)"
+              placeholder="e.g. Conference, personal leave"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
           </div>
 
-          <div className="rounded-md border border-line bg-surface p-5">
-            <p className="eyebrow">Upcoming</p>
-            <p className="mt-2 font-display text-3xl text-ink">{upcomingCount}</p>
-            <p className="mt-1 text-[13px] text-ink-soft">booked appointments</p>
-          </div>
+          {formError && <Alert tone="error" className="mt-4">{formError}</Alert>}
+          {notice && <Alert tone="success" className="mt-4">{notice}</Alert>}
 
-          <Link
-            href="/doctor/leaves"
-            className="group flex flex-col justify-between rounded-md border border-line bg-surface p-5 hover:border-pine"
-          >
-            <div className="flex items-center justify-between">
-              <CalendarOff className="h-4 w-4 text-ink-faint" strokeWidth={1.75} />
-              <ArrowRight className="h-3.5 w-3.5 text-ink-faint transition-transform group-hover:translate-x-0.5" />
-            </div>
-            <div>
-              <p className="mt-3 font-display text-[15px] text-ink">Manage leave</p>
-              <p className="mt-1 text-[13px] text-ink-soft">Mark unavailable dates</p>
-            </div>
-          </Link>
-        </div>
+          <Button type="submit" loading={submitting} className="mt-4">
+            Add leave date
+          </Button>
+        </form>
 
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-display text-[18px] text-ink">
-              <Sunrise className="h-4 w-4 text-pine" strokeWidth={1.75} />
-              Today's schedule
-            </h2>
-
-            <Link
-              href="/doctor/appointments"
-              className="flex items-center gap-1 text-sm font-medium text-pine hover:underline"
-            >
-              View all
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold text-ink">Upcoming leave</h2>
 
           {loading ? (
             <Loading />
           ) : error ? (
             <Alert tone="error">{error}</Alert>
-          ) : todaysAppointments.length === 0 ? (
+          ) : leaves.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-surface/50 px-6 py-12 text-center">
-              <ClipboardList className="h-6 w-6 text-ink-faint" strokeWidth={1.5} />
-              <p className="font-display text-[16px] text-ink">Nothing scheduled today</p>
-              <p className="text-sm text-ink-soft">Enjoy the quiet — check back tomorrow.</p>
+              <CalendarOff className="h-6 w-6 text-ink-faint" strokeWidth={1.5} />
+              <p className="font-display text-[16px] text-ink">No leave dates set</p>
+              <p className="text-sm text-ink-soft">You're marked as available on every scheduled day.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {todaysAppointments.map((appointment) => (
-                <AppointmentCard
-                  key={appointment.id}
-                  appointment={appointment}
-                  viewerRole="doctor"
-                />
+            <div className="divide-y divide-line rounded-md border border-line bg-surface">
+              {leaves.map((leave) => (
+                <div key={leave.id} className="flex items-center justify-between gap-4 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-medium text-ink">{formatDate(leave.date)}</p>
+                    {leave.reason && (
+                      <p className="mt-0.5 text-[13px] text-ink-soft">{leave.reason}</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(leave.id)}
+                    disabled={deletingId === leave.id}
+                    className="rounded-sm p-2 text-ink-faint hover:bg-clay-wash hover:text-clay disabled:opacity-50"
+                    aria-label="Remove leave date"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
             </div>
           )}

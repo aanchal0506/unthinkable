@@ -1,50 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, CalendarCheck2 } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList, CalendarOff, ArrowRight, Sunrise } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import Loading from "@/components/ui/Loading";
 import Alert from "@/components/ui/Alert";
-
 import AppointmentCard from "@/components/appointments/AppointmentCard";
-import AppointmentTabs from "@/components/appointments/AppointmentTabs";
 
 import { getMyDoctorAppointments } from "@/lib/api/appointments";
+import { getStoredUser } from "@/lib/auth";
 
-const getAppointmentDate = (appointment: any) =>
-  appointment.date || appointment.appointmentDate;
-
-const isUpcoming = (appointment: any) => {
-  if (appointment.status === "CANCELLED" || appointment.status === "COMPLETED") {
-    return false;
-  }
-
-  const date = getAppointmentDate(appointment);
-  if (!date) return false;
-
-  const appointmentDate = String(date).slice(0, 10);
-
-  const today = new Date();
-  const todayDate = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
-  ].join("-");
-
-  if (appointmentDate > todayDate) return true;
-  if (appointmentDate < todayDate) return false;
-
-  const [hours, minutes] = (appointment.startTime || "00:00").split(":").map(Number);
-  const appointmentMinutes = hours * 60 + minutes;
-  const currentMinutes = today.getHours() * 60 + today.getMinutes();
-
-  return appointmentMinutes >= currentMinutes;
+const todayISO = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
-export default function DoctorAppointmentsPage() {
+export default function DoctorDashboardPage() {
+  const user = getStoredUser();
+
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -69,91 +48,107 @@ export default function DoctorAppointmentsPage() {
     load();
   }, []);
 
-  const upcoming = useMemo(
-    () =>
-      appointments
-        .filter(isUpcoming)
-        .sort((a, b) =>
-          `${getAppointmentDate(a)} ${a.startTime}`.localeCompare(
-            `${getAppointmentDate(b)} ${b.startTime}`
-          )
-        ),
-    [appointments]
-  );
+  const today = todayISO();
 
-  const past = useMemo(
-    () =>
-      appointments
-        .filter((a) => !isUpcoming(a))
-        .sort((a, b) =>
-          `${getAppointmentDate(b)} ${b.startTime}`.localeCompare(
-            `${getAppointmentDate(a)} ${a.startTime}`
-          )
-        ),
-    [appointments]
-  );
+  const todaysAppointments = useMemo(() => {
+    return appointments
+      .filter(
+        (appointment) =>
+          String(appointment.date).slice(0, 10) === today &&
+          appointment.status === "BOOKED"
+      )
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [appointments, today]);
 
-  const displayed = activeTab === "upcoming" ? upcoming : past;
+  const upcomingCount = useMemo(
+    () =>
+      appointments.filter(
+        (a) => a.status === "BOOKED" && String(a.date).slice(0, 10) >= today
+      ).length,
+    [appointments, today]
+  );
 
   return (
     <AppShell allow={["DOCTOR"]}>
       <div className="mx-auto max-w-5xl">
-        <div>
-          <p className="eyebrow mb-2">Schedule</p>
-          <h1 className="font-display text-[28px] text-ink">Appointments</h1>
+        <div className="mb-8">
+          <p className="eyebrow mb-2">Doctor portal</p>
+          <h1 className="font-display text-[28px] text-ink">
+            Welcome back, Dr. {user?.name?.split(" ")[1] || ""}
+          </h1>
           <p className="mt-1.5 text-[14.5px] text-ink-soft">
-            Every appointment booked with you, past and upcoming.
+            Here's a look at your schedule.
           </p>
         </div>
 
-        <div className="mt-8">
-          <AppointmentTabs
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            upcomingCount={upcoming.length}
-            pastCount={past.length}
-          />
+        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-md border border-line bg-surface p-5">
+            <p className="eyebrow">Today</p>
+            <p className="mt-2 font-display text-3xl text-ink">
+              {todaysAppointments.length}
+            </p>
+            <p className="mt-1 text-[13px] text-ink-soft">appointments scheduled</p>
+          </div>
+
+          <div className="rounded-md border border-line bg-surface p-5">
+            <p className="eyebrow">Upcoming</p>
+            <p className="mt-2 font-display text-3xl text-ink">{upcomingCount}</p>
+            <p className="mt-1 text-[13px] text-ink-soft">booked appointments</p>
+          </div>
+
+          <Link
+            href="/doctor/leaves"
+            className="group flex flex-col justify-between rounded-md border border-line bg-surface p-5 hover:border-pine"
+          >
+            <div className="flex items-center justify-between">
+              <CalendarOff className="h-4 w-4 text-ink-faint" strokeWidth={1.75} />
+              <ArrowRight className="h-3.5 w-3.5 text-ink-faint transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <div>
+              <p className="mt-3 font-display text-[15px] text-ink">Manage leave</p>
+              <p className="mt-1 text-[13px] text-ink-soft">Mark unavailable dates</p>
+            </div>
+          </Link>
         </div>
 
-        {loading ? (
-          <div className="py-16">
-            <Loading />
-          </div>
-        ) : error ? (
-          <Alert tone="error" className="mt-6">
-            {error}
-          </Alert>
-        ) : displayed.length === 0 ? (
-          <div className="mt-6 rounded-md border border-dashed border-line-strong bg-surface/50 px-6 py-14 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-sm border border-line-strong bg-paper text-ink-faint">
-              {activeTab === "upcoming" ? (
-                <CalendarClock className="h-5 w-5" strokeWidth={1.5} />
-              ) : (
-                <CalendarCheck2 className="h-5 w-5" strokeWidth={1.5} />
-              )}
-            </div>
-
-            <h2 className="mt-4 font-display text-[17px] text-ink">
-              {activeTab === "upcoming" ? "No upcoming appointments" : "No past appointments"}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-display text-[18px] text-ink">
+              <Sunrise className="h-4 w-4 text-pine" strokeWidth={1.75} />
+              Today's schedule
             </h2>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-soft">
-              {activeTab === "upcoming"
-                ? "Appointments patients book with you will appear here."
-                : "Completed and cancelled appointments will appear here."}
-            </p>
+            <Link
+              href="/doctor/appointments"
+              className="flex items-center gap-1 text-sm font-medium text-pine hover:underline"
+            >
+              View all
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
-        ) : (
-          <div className="mt-6 space-y-4">
-            {displayed.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                viewerRole="doctor"
-              />
-            ))}
-          </div>
-        )}
+
+          {loading ? (
+            <Loading />
+          ) : error ? (
+            <Alert tone="error">{error}</Alert>
+          ) : todaysAppointments.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line-strong bg-surface/50 px-6 py-12 text-center">
+              <ClipboardList className="h-6 w-6 text-ink-faint" strokeWidth={1.5} />
+              <p className="font-display text-[16px] text-ink">Nothing scheduled today</p>
+              <p className="text-sm text-ink-soft">Enjoy the quiet — check back tomorrow.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {todaysAppointments.map((appointment) => (
+                <AppointmentCard
+                  key={appointment.id}
+                  appointment={appointment}
+                  viewerRole="doctor"
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </AppShell>
   );

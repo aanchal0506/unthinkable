@@ -82,7 +82,7 @@ h4 {
 }
 
 a {
-  color: var(--color-pine);
+  color: inherit;
 }
 
 button,

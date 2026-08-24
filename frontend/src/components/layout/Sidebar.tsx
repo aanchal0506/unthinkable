@@ -97,7 +97,7 @@ export default function Sidebar({
             </span>
 
             <div>
-              <p className="font-display text-[15px] leading-none">CarePoint</p>
+              <p className="font-display text-white text-[15px] leading-none">CarePoint</p>
               <p className="mt-1 font-mono text-[9.5px] uppercase tracking-label text-white/45">
                 {user?.role?.toLowerCase() || "patient"} portal
               </p>
@@ -130,7 +130,7 @@ export default function Sidebar({
                   ${
                     active
                       ? "bg-white/10 font-medium text-white"
-                      : "text-white/65 hover:bg-white/5 hover:text-white"
+                      : "text-white hover:bg-white/10 hover:text-white"
                   }
                 `}
               >
@@ -147,7 +147,7 @@ export default function Sidebar({
               {user?.name || "User"}
             </p>
 
-            <p className="mt-0.5 truncate font-mono text-[11px] text-white/50">
+            <p className="mt-0.5 truncate font-mono text-[11px] text-white/70">
               {user?.email || ""}
             </p>
           </div>
